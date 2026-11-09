@@ -16,6 +16,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -28,6 +29,13 @@ fun obj(word: String): String {
 
 fun day(ms: Long): String = SimpleDateFormat("M월 d일", Locale.KOREA).format(Date(ms))
 fun moment(ms: Long): String = SimpleDateFormat("M월 d일 a h:mm", Locale.KOREA).format(Date(ms))
+fun timeOfDay(ms: Long): String = SimpleDateFormat("a h:mm", Locale.KOREA).format(Date(ms))
+
+/** 추천 기록 날짜(003): 올해면 "M월 d일", 아니면 "yyyy년 M월 d일". 해가 다른 같은 날이 한 묶음이 되지 않게 */
+fun dayLabel(ms: Long): String {
+    val year = { t: Long -> Calendar.getInstance().apply { timeInMillis = t }.get(Calendar.YEAR) }
+    return if (year(ms) == year(System.currentTimeMillis())) day(ms) else SimpleDateFormat("yyyy년 M월 d일", Locale.KOREA).format(Date(ms))
+}
 
 /** 아이콘 타일: 바탕 그라데이션과 아이콘 색 */
 enum class Tile(val from: Int, val to: Int, val fg: Int) {
@@ -215,11 +223,11 @@ fun Ui.driving(recording: Boolean): View = column(32,
 ).apply { setPadding(0, px(120), 0, 0) }
 
 /** 3. 운전 직후 안내: 왜(근거 타임라인)와 어디(누를 곳) */
-fun Ui.tip(f: Feature, reason: String, marks: List<Mark>, driveMs: Long, banner: View?): View {
+fun Ui.tip(f: Feature, reason: String, marks: List<Mark>, driveMs: Long, banner: View?, title: View = recent(driveMs)): View {
     val verb = if (f == Feature.DRIVE_MODE) "바꿔" else "켜"
     val parts = mutableListOf<View>()
     banner?.let(parts::add)
-    parts += recent(driveMs)
+    parts += title
     parts += hero(tile(f.icon, Tile.BLUE), "다음엔 ${obj(f.title)}\n$verb 보세요", reason)
     if (marks.isNotEmpty()) {
         val points = marks.count { it.end < 0 }
@@ -308,6 +316,29 @@ fun Ui.complete(features: List<Feature>, learnedAt: (Feature) -> Long, firstDriv
         hero(ring, "내 차 기능 ${features.size}개를\n모두 익혔어요", "${day(firstDrive)}부터 운전 ${drives}번 만이에요."),
         grid(3, cells, even = true),
     )
+}
+
+/** 8. 추천 기록 목록(003): 날짜별, 최신이 위. 항목을 누르면 [onOpen](그 번호) */
+fun Ui.history(records: List<Record>, learned: Set<Feature>, onOpen: (Int) -> Unit, onClose: () -> Unit): View {
+    val close = chip("✕  닫기", R.color.text2, R.color.chip).apply { setOnClickListener { onClose() } }
+    val head = row(20, column(6, small("지난 안내"), headline("추천 기록", 44f)), close, grow = 0)
+    if (records.isEmpty()) return column(28, head, hero(tile(R.drawable.ic_clock, Tile.GREY),
+        "아직 추천받은 기능이 없어요", "운전이 끝나 P에 놓으면 기능 하나를 알려 드리고, 여기에 남겨요."))
+    val labels = records.map { dayLabel(it.at) }
+    val parts = mutableListOf<View>(head)
+    records.forEachIndexed { i, r ->
+        if (i == 0 || labels[i] != labels[i - 1]) parts += small(labels[i])
+        val used = r.pick in learned
+        val top = listOfNotNull(
+            text(r.pick.title, 30f, R.color.text1, 700),
+            text(timeOfDay(r.at), 22f, R.color.text3),
+            chip("써 봄 ✓", R.color.green_text, R.color.green_soft).takeIf { used },
+        )
+        parts += card(row(24, tile(r.pick.icon, if (used) Tile.GREEN else Tile.BLUE, 96),
+            column(8, row(12, *top.toTypedArray()), body(r.reason, 24f)), grow = 1))
+            .apply { setOnClickListener { onOpen(i) } }
+    }
+    return column(20, *parts.toTypedArray())
 }
 
 /** 7. 구역 카드: 그 구역 기능들의 상태·언제·누를 곳 */

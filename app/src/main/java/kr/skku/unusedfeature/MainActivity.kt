@@ -14,11 +14,13 @@ import android.widget.TextView
 /** 상황 화면(오른쪽, 세로는 위)과 차 지도(왼쪽, 세로는 아래). 상태 우선순위는 data-model "화면 상태" */
 class MainActivity : Activity() {
 
-    private enum class State { DRIVING, ZONE, FIRST, COMPLETE, TIP, CONFIRM, NONE }
+    private enum class State { DRIVING, RECORD, HISTORY, ZONE, FIRST, COMPLETE, TIP, CONFIRM, NONE }
 
     private lateinit var progress: Progress
     private lateinit var ui: Ui
     private var openZone: Zone? = null
+    private var openHistory: Int? = null // 추천 기록(003): null 닫힘, -1 목록, n 다시 보기
+    private var listY = 0 // 다시 보기로 가기 전 목록의 스크롤 위치
     private var shown: State? = null
     private var drivesSeen = -1
 
@@ -31,6 +33,15 @@ class MainActivity : Activity() {
             GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(getColor(R.color.map_top), getColor(R.color.map_bottom)),
         )
         findViewById<CarMapView>(R.id.map).onZone = ::toggleZone
+        findViewById<TextView>(R.id.historyButton).apply {
+            setTextColor(getColor(R.color.blue))
+            background = ui.round(getColor(R.color.blue_soft), 100f)
+            setPadding(ui.px(18), ui.px(9), ui.px(20), ui.px(9))
+            setOnClickListener {
+                if (WatchService.driving) return@setOnClickListener // 구역 점과 같은 규칙(FR-007). 비활성 처리와 함께 둔다
+                openHistory = -1; openZone = null; render() // 늘 목록으로, 닫기는 "✕ 닫기"(FR-006)
+            }
+        }
         findViewById<LinearLayout>(R.id.legend).apply {
             addView(legend(R.color.blue, "이번 안내"))
             addView(legend(R.color.green, "익힘"))
@@ -51,6 +62,8 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         WatchService.onUpdate = null
+        // 가려지는 동안 운전이 있었을 수 있다(1분 미만이면 운전 횟수도 그대로). 돌아오면 상황 화면부터(US3-3)
+        openZone = null; openHistory = null
         super.onPause()
     }
 
@@ -62,13 +75,16 @@ class MainActivity : Activity() {
     private fun toggleZone(z: Zone) {
         if (WatchService.driving) return
         openZone = if (openZone == z) null else z
+        openHistory = null // 기록 페이지와 구역 카드는 동시에 열리지 않는다(FR-008)
         render()
     }
 
     private fun render() {
-        // 운전이 시작됐거나 새 운전 결과가 있으면 열어 둔 구역 카드를 닫는다(안내가 가려지지 않게)
-        if (WatchService.driving || progress.drives() != drivesSeen) openZone = null
+        // 운전이 시작됐거나 새 운전 결과가 있으면 열어 둔 구역 카드·기록 페이지를 닫는다(안내가 가려지지 않게, FR-007)
+        if (WatchService.driving || progress.drives() != drivesSeen) { openZone = null; openHistory = null }
         drivesSeen = progress.drives()
+        val records = progress.history()
+        val record = openHistory?.let(records::getOrNull) // 범위 밖이면 목록
         val learned = progress.learned()
         val supported = Feature.entries.filterNot { it in WatchService.unsupported }
         val total = supported.size
@@ -77,6 +93,8 @@ class MainActivity : Activity() {
         val confirmed = progress.lastConfirmed() ?: pick?.takeIf { it in learned }
         val state = when {
             WatchService.driving -> State.DRIVING
+            record != null -> State.RECORD
+            openHistory != null -> State.HISTORY
             openZone != null -> State.ZONE
             progress.drives() == 0 -> State.FIRST
             total > 0 && done == total -> State.COMPLETE
@@ -85,6 +103,7 @@ class MainActivity : Activity() {
             else -> State.NONE
         }
         if (state == State.DRIVING && shown == State.DRIVING) return // 주행 중에는 화면을 바꾸지 않는다(FR-010)
+        val prev = shown
         shown = state
 
         val screen = findViewById<LinearLayout>(R.id.screen)
@@ -93,6 +112,10 @@ class MainActivity : Activity() {
         val driveMs = progress.lastDriveMillis()
         screen.addView(when (state) {
             State.DRIVING -> ui.driving(WatchService.recording)
+            State.RECORD -> recordScreen(record!!, learned)
+            State.HISTORY -> ui.history(records, learned,
+                onOpen = { listY = findViewById<ScrollView>(R.id.scroll).scrollY; openHistory = it; render() },
+                onClose = { openHistory = null; render() })
             State.ZONE -> zoneScreen(openZone!!, learned, supported)
             State.FIRST -> ui.firstRun()
             State.COMPLETE -> ui.complete(supported, progress::learnedAt, progress.firstDrive(), progress.drives())
@@ -102,15 +125,24 @@ class MainActivity : Activity() {
                 progress.learnedAt(confirmed), progress.learnedNote(confirmed))
             State.NONE -> ui.none(driveMs, progress.lastUsed().filter { it in supported }, supported.filterNot { it in learned })
         }, lp())
-        findViewById<ScrollView>(R.id.scroll).scrollTo(0, 0)
+        // 다른 화면으로 바뀔 때만 맨 위로. 다시 보기에서 목록으로 돌아오면 보던 자리로, 같은 화면을 다시 그리면 그대로
+        val scroll = findViewById<ScrollView>(R.id.scroll)
+        if (state == State.HISTORY && prev == State.RECORD) scroll.post { scroll.scrollTo(0, listY) }
+        else if (state != prev) scroll.scrollTo(0, 0)
 
         val spots = Zone.entries.associateWith { z ->
             val fs = supported.filter { it.zone == z }
             CarMapView.Spot(fs.count { it in learned }, fs.size)
         }
         val pulse = pick?.zone?.takeIf { state == State.TIP }
-        findViewById<CarMapView>(R.id.map).set(spots, pulse, confirmed?.zone?.takeIf { state == State.CONFIRM }, openZone, state == State.DRIVING)
+        findViewById<CarMapView>(R.id.map).set(spots, pulse, confirmed?.zone?.takeIf { state == State.CONFIRM },
+            record?.pick?.zone ?: openZone, state == State.DRIVING) // 다시 보기는 그 구역에 선택 링
         findViewById<RingView>(R.id.ring).set(done, total)
+        findViewById<TextView>(R.id.historyButton).apply {
+            text = if (records.isEmpty()) "추천 기록  ›" else "추천 기록 ${records.size}  ›"
+            isEnabled = !WatchService.driving // 비활성 뷰는 누르기를 받지 않고 덤프에 enabled="false"(FR-007)
+            alpha = if (WatchService.driving) 0.4f else 1f
+        }
         findViewById<TextView>(R.id.mapSub).text = when {
             state == State.FIRST -> "${total}개가 기다리고 있어요"
             done == total -> "모두 익힘"
@@ -120,6 +152,15 @@ class MainActivity : Activity() {
             list.removeAllViews()
             Zone.entries.forEach { z -> list.addView(zoneRow(z, spots.getValue(z), z == pulse, state == State.DRIVING), lp(bottom = 12)) }
         }
+    }
+
+    /** 추천 기록 다시 보기(003): 그때 안내 화면 그대로, 제목만 그때 시각 */
+    private fun recordScreen(r: Record, learned: Set<Feature>): View {
+        val back = ui.chip("←  추천 기록", R.color.text2, R.color.chip).apply { setOnClickListener { openHistory = -1; render() } }
+        val used = progress.learnedAt(r.pick).takeIf { r.pick in learned }
+            ?.let { ui.chip(if (it > 0) "써 봄 ✓ ${day(it)}" else "써 봄 ✓", R.color.green_text, R.color.green_soft) }
+        return ui.tip(r.pick, r.reason, r.marks, r.driveMs, ui.row(12, *listOfNotNull(back, used).toTypedArray()),
+            ui.small("${dayLabel(r.at)} ${timeOfDay(r.at)} 운전 · ${r.driveMs / MINUTE}분"))
     }
 
     private fun zoneScreen(z: Zone, learned: Set<Feature>, supported: List<Feature>): View {

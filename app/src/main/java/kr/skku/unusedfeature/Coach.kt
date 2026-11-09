@@ -356,3 +356,26 @@ object Marks {
         runCatching { Mark(Kind.valueOf(p[0]), p[1].toLong(), p[2].toLong(), p[3]) }.getOrNull()
     }
 }
+
+/** 추천 기록 하나 = 안내가 나간 운전 하나(003 data-model "Record") */
+data class Record(val at: Long, val pick: Feature, val reason: String, val driveMs: Long, val marks: List<Mark>)
+
+/** 추천 기록 저장 형식: 기록끼리 \u001E, 필드끼리 \u001F, 근거는 [Marks] 형식. 화면 글자에는 이 제어 문자가 없다 */
+object History {
+    private const val RS = '\u001E'
+    private const val US = '\u001F'
+
+    fun encode(records: List<Record>) = records.joinToString("$RS") { r ->
+        listOf(r.at, r.pick.name, r.reason, r.driveMs, Marks.encode(r.marks)).joinToString("$US")
+    }
+
+    /** 필드 수·숫자·기능 이름을 읽을 수 없는 기록은 건너뛴다(FR-009) */
+    fun decode(s: String?): List<Record> = s.orEmpty().split(RS).mapNotNull { rec ->
+        val p = rec.split(US)
+        if (p.size != 5) return@mapNotNull null
+        runCatching { Record(p[0].toLong(), Feature.valueOf(p[1]), p[2], p[3].toLong(), Marks.decode(p[4])) }.getOrNull()
+    }
+
+    /** 기존 문자열을 다시 쓰지 않고 뒤에 이어 붙인다. 지금 읽을 수 없는 기록도 남는다(research R9) */
+    fun append(old: String?, r: Record) = if (old.isNullOrEmpty()) encode(listOf(r)) else "$old$RS${encode(listOf(r))}"
+}

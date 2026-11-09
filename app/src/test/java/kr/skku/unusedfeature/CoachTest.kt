@@ -359,3 +359,40 @@ class PickAreaTest {
         assertNull(pickArea(listOf(left), SeatValue.ROW_1_RIGHT) { it.values })
     }
 }
+
+/** 003 추천 기록 저장 형식(data-model "저장") */
+class HistoryTest {
+    private fun rec(at: Long, f: Feature, reason: String, marks: List<Mark> = emptyList()) = Record(at, f, reason, 2 * MINUTE, marks)
+
+    @Test fun roundTrip() {
+        val records = listOf(
+            rec(1_000L, AUTO_CLIMATE, "바람과 온도를 손으로 3번 바꾸셨어요.",
+                listOf(Mark(Kind.FAN, 10_200, -1, "풍량 2→4"), Mark(Kind.RAIN, 0, 30_000, "와이퍼"))),
+            rec(2_000L, SEAT_VENT, "에어컨을 20°로 | 낮게 트셨어요."), // 근거 없음, 이유에 구분 기호
+        )
+        assertEquals(records, History.decode(History.encode(records)))
+    }
+
+    @Test fun skipsBrokenRecords() {
+        val good = rec(3_000L, AUTO_WIPER, "와이퍼 단계를 손으로 4번 바꾸셨어요.")
+        val s = listOf(
+            "x\u001FAUTO_CLIMATE\u001F이유\u001F1\u001F", // 숫자가 아닌 시각
+            "1\u001FAUTO_HOLD\u001F이유\u001F1\u001F", // 지금 앱에 없는 기능
+            "1\u001F2", // 필드 수
+            History.encode(listOf(good)),
+        ).joinToString("\u001E")
+        assertEquals(listOf(good), History.decode(s))
+        assertEquals(emptyList<Record>(), History.decode(null))
+        assertEquals(emptyList<Record>(), History.decode(""))
+    }
+
+    @Test fun appendKeepsOldText() {
+        val a = rec(1L, AUTO_CLIMATE, "a")
+        val b = rec(2L, CRUISE, "b")
+        assertEquals(listOf(a), History.decode(History.append(null, a)))
+        assertEquals(listOf(a), History.decode(History.append("", a)))
+        val s = History.append(History.append("읽을 수 없는 옛 기록", a), b)
+        assertTrue(s.startsWith("읽을 수 없는 옛 기록")) // 다시 쓰지 않고 이어 붙인다(research R9)
+        assertEquals(listOf(a, b), History.decode(s))
+    }
+}

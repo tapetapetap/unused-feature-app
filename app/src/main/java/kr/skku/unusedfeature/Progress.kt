@@ -24,7 +24,11 @@ class Progress(context: Context) {
 
     fun record(o: Outcome) {
         p.edit().apply {
-            o.pick?.let { putInt("shown_${it.name}", p.getInt("shown_${it.name}", 0) + 1) }
+            o.pick?.let {
+                putInt("shown_${it.name}", p.getInt("shown_${it.name}", 0) + 1)
+                val r = Record(System.currentTimeMillis(), it, o.reason, o.driveMillis, o.marks)
+                putString("history", History.append(p.getString("history", null), r))
+            }
             putString("last_pick", o.pick?.name)
             putString("last_confirmed", o.confirmed?.name)
             putString("last_reason", o.reason)
@@ -47,6 +51,9 @@ class Progress(context: Context) {
     fun lastMarks(): List<Mark> = Marks.decode(p.getString("last_marks", null))
     fun lastUsed(): Set<Feature> = p.getString("last_used", null).orEmpty().split(',').mapNotNull(::feature).toSet()
     fun lastDriveMillis(): Long = p.getLong("last_drive_ms", 0)
+
+    /** 추천 기록, 최신이 앞(003) */
+    fun history(): List<Record> = History.decode(p.getString("history", null)).asReversed()
 
     private fun feature(name: String) = Feature.entries.firstOrNull { it.name == name }
 }
