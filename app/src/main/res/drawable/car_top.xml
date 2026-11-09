@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp" android:height="560dp"
+    android:viewportWidth="300" android:viewportHeight="560">
+    <path android:pathData="M43,104 h2 a9,9 0 0,1 9,9 v54 a9,9 0 0,1 -9,9 h-2 a9,9 0 0,1 -9,-9 v-54 a9,9 0 0,1 9,-9 z M255,104 h2 a9,9 0 0,1 9,9 v54 a9,9 0 0,1 -9,9 h-2 a9,9 0 0,1 -9,-9 v-54 a9,9 0 0,1 9,-9 z M43,396 h2 a9,9 0 0,1 9,9 v54 a9,9 0 0,1 -9,9 h-2 a9,9 0 0,1 -9,-9 v-54 a9,9 0 0,1 9,-9 z M255,396 h2 a9,9 0 0,1 9,9 v54 a9,9 0 0,1 -9,9 h-2 a9,9 0 0,1 -9,-9 v-54 a9,9 0 0,1 9,-9 z" android:fillColor="@color/car_tire" />
+    <path android:pathData="M150,18 C205,18 246,40 252,92 L258,200 C262,300 262,400 254,470 C248,520 210,542 150,542 C90,542 52,520 46,470 C38,400 38,300 42,200 L48,92 C54,40 95,18 150,18 Z" android:fillColor="@color/car_body" android:strokeColor="@color/car_stroke" android:strokeWidth="2" />
+    <path android:pathData="M38,200 c-10,-2 -18,0 -18,6 s8,8 18,8 z M262,200 c10,-2 18,0 18,6 s-8,8 -18,8 z" android:fillColor="@color/car_body" android:strokeColor="@color/car_stroke" android:strokeWidth="2" />
+    <path android:pathData="M70,72 C84,54 104,45 126,42 M230,72 C216,54 196,45 174,42" android:fillColor="#00000000" android:strokeColor="@color/car_head" android:strokeWidth="7" android:strokeLineCap="round" />
+    <path android:pathData="M84,522 C104,532 122,535 134,536 M216,522 C196,532 178,535 166,536" android:fillColor="#00000000" android:strokeColor="@color/car_tail" android:strokeWidth="7" android:strokeLineCap="round" />
+    <path android:pathData="M76,152 C110,134 190,134 224,152 L216,202 C186,194 114,194 84,202 Z" android:fillColor="@color/car_glass" />
+    <path android:pathData="M88,470 C120,478 180,478 212,470 L218,500 C186,510 114,510 82,500 Z" android:fillColor="@color/car_glass" />
+    <path android:pathData="M88,202 h124 a26,26 0 0,1 26,26 v214 a26,26 0 0,1 -26,26 h-124 a26,26 0 0,1 -26,-26 v-214 a26,26 0 0,1 26,-26 z" android:fillColor="@color/car_cabin" />
+    <path android:pathData="M64,206 C110,194 190,194 236,206 L236,228 L64,228 Z" android:fillColor="@color/car_dash" />
+    <path android:pathData="M138,200 h24 a4,4 0 0,1 4,4 v12 a4,4 0 0,1 -4,4 h-24 a4,4 0 0,1 -4,-4 v-12 a4,4 0 0,1 4,-4 z" android:fillColor="@color/car_screen" />
+    <path android:pathData="M86,232 h38 a6,6 0 0,1 6,6 v0 a6,6 0 0,1 -6,6 h-38 a6,6 0 0,1 -6,-6 v0 a6,6 0 0,1 6,-6 z" android:fillColor="#00000000" android:strokeColor="@color/car_wheel" android:strokeWidth="3" android:strokeLineCap="round" />
+    <path android:pathData="M149,232 h2 a8,8 0 0,1 8,8 v88 a8,8 0 0,1 -8,8 h-2 a8,8 0 0,1 -8,-8 v-88 a8,8 0 0,1 8,-8 z" android:fillColor="@color/car_console" />
+    <path android:pathData="M90,268 h30 a12,12 0 0,1 12,12 v26 a12,12 0 0,1 -12,12 h-30 a12,12 0 0,1 -12,-12 v-26 a12,12 0 0,1 12,-12 z M180,268 h30 a12,12 0 0,1 12,12 v26 a12,12 0 0,1 -12,12 h-30 a12,12 0 0,1 -12,-12 v-26 a12,12 0 0,1 12,-12 z M94,384 h112 a16,16 0 0,1 16,16 v20 a16,16 0 0,1 -16,16 h-112 a16,16 0 0,1 -16,-16 v-20 a16,16 0 0,1 16,-16 z" android:fillColor="@color/car_seat" />
+    <path android:pathData="M88,318 h34 a8,8 0 0,1 8,8 v4 a8,8 0 0,1 -8,8 h-34 a8,8 0 0,1 -8,-8 v-4 a8,8 0 0,1 8,-8 z M178,318 h34 a8,8 0 0,1 8,8 v4 a8,8 0 0,1 -8,8 h-34 a8,8 0 0,1 -8,-8 v-4 a8,8 0 0,1 8,-8 z M87,436 h126 a7,7 0 0,1 7,7 v2 a7,7 0 0,1 -7,7 h-126 a7,7 0 0,1 -7,-7 v-2 a7,7 0 0,1 7,-7 z" android:fillColor="@color/car_seat_back" />
+</vector>

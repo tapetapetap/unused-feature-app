@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 지도 머리: 진행 원 + "내 차 기능" + 익힌 수 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <kr.skku.unusedfeature.RingView
+        android:id="@+id/ring"
+        android:layout_width="84dp"
+        android:layout_height="84dp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif"
+            android:text="내 차 기능"
+            android:textColor="@color/text1"
+            android:textFontWeight="700"
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/mapSub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/text3"
+            android:textSize="22sp" />
+    </LinearLayout>
+</LinearLayout>

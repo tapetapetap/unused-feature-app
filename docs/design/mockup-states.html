@@ -1,0 +1,367 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Asta+Sans:wght@300..800&display=swap" rel="stylesheet">
+<style>
+  .pm{width:840px;height:605px;display:grid;grid-template-columns:300px 1fr;background:#F7F8FA;color:#131417;font-family:'Asta Sans','Apple SD Gothic Neo',system-ui,sans-serif;transform:scale(.72);transform-origin:0 0}
+  .pm *{box-sizing:border-box}
+  .scale{width:605px;height:436px;overflow:hidden;border-radius:9px;flex:none;box-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 26px rgba(0,0,0,.09)}
+  .L{background:linear-gradient(180deg,#F1F3F6,#E9ECF1);padding:22px 20px 16px;display:flex;flex-direction:column;border-right:1px solid #E3E5EA;position:relative}
+  .Lh{display:flex;align-items:center;gap:12px}
+  .Lt{font-size:15px;font-weight:800}
+  .R{padding:26px 30px 24px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .lbl{font-size:12px;font-weight:600;color:#6B6E76}
+  .sub{font-size:12px;color:#7A7D85;line-height:1.45}
+  .bd{font-size:14px;line-height:1.55;color:#3A3C42}
+  .h1{font-size:27px;font-weight:800;line-height:1.2;letter-spacing:-.01em}
+  .ct{font-size:13px;font-weight:700}
+  .row{display:flex;gap:20px;align-items:center}
+  .cw{background:#fff;border:1px solid #E3E5EA;border-radius:12px}
+  .tile{width:108px;height:108px;border-radius:24px;display:flex;align-items:center;justify-content:center;flex:none;position:relative}
+  .tile>svg{width:60px;height:60px}
+  .t-blue{background:linear-gradient(145deg,#2F80FF,#0050D8);color:#fff;box-shadow:0 10px 22px rgba(0,100,255,.28)}
+  .t-green{background:linear-gradient(145deg,#1FD67F,#00A653);color:#fff;box-shadow:0 10px 22px rgba(2,194,101,.28)}
+  .t-violet{background:linear-gradient(145deg,#7B6BFF,#0064FF);color:#fff;box-shadow:0 10px 22px rgba(90,70,250,.28)}
+  .t-grey{background:#E6E8EC;color:#8B8F98}
+  .badge{position:absolute;right:-8px;top:-8px;width:34px;height:34px;border-radius:50%;background:#fff;color:#02C265;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  .badge svg{width:20px;height:20px}
+  .legend{margin-top:auto;display:flex;gap:12px;justify-content:center}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:1px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px}
+  .chip svg{width:15px;height:15px}
+  .num{width:26px;height:26px;border-radius:50%;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+  .pulse{transform-box:fill-box;transform-origin:center;animation:pl 1.8s ease-out infinite}
+  .pulse-g{transform-box:fill-box;transform-origin:center;animation:pl 1.4s ease-out 3}
+  @keyframes pl{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.1);opacity:0}}
+  .glow{animation:gl 1.8s ease-in-out infinite}
+  @keyframes gl{0%,100%{box-shadow:0 0 0 3px rgba(0,100,255,.25)}50%{box-shadow:0 0 0 8px rgba(0,100,255,.08)}}
+  .state{display:flex;gap:26px;align-items:flex-start;margin:0 0 34px}
+  .state .desc{max-width:290px}
+  .state .desc h3{margin-bottom:6px}
+  .state .desc p{color:var(--text-secondary);font-size:.88rem;line-height:1.5;margin:0 0 8px}
+  .step{display:flex;gap:12px;align-items:center;padding:12px 14px}
+  /* 다크 테마 */
+  .pm.dark{background:#131417;color:#F2F3F5}
+  .dark .L{background:linear-gradient(180deg,#1D1E21,#17181B);border-right-color:#2A2C31}
+  .dark .cw{background:#1D1E21;border-color:#313236}
+  .dark .sub,.dark .lbl{color:#9A9DA5}
+  .dark .bd{color:#C9CBD0}
+  .dark .t-blue{background:linear-gradient(145deg,#2E95FF,#0068E0);box-shadow:0 10px 24px rgba(0,130,255,.3)}
+  /* 차 색: 라이트 기본, .dk에서 다크 */
+  svg{--cb:#fff;--cs:#D5D8DE;--cg:#DDE4EE;--cc:#F2F3F6;--cd:#E1E4E9;--se:#E3E5EA;--sb:#D2D5DB;--co:#E5E7EB;--cw:#7D828C;--hl:#C5CAD3;--tl:#F1B4A8;--ti:#2A2C31;--sc:#1E2026}
+  svg.dk{--cb:#2A2C31;--cs:#44464E;--cg:#3A4250;--cc:#1D1E21;--cd:#313236;--se:#3A3C42;--sb:#44464E;--co:#313236;--cw:#8B8F98;--hl:#5A5F69;--tl:#8A3B30;--ti:#0B0C0E;--sc:#0B0C0E}
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-auto" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h7a2.2 2.2 0 1 0-2.2-2.2"/><path d="M3 11h9a2.2 2.2 0 1 1-2.2 2.2"/><path d="M3 15h4"/><path d="M14 21l3-7 3 7M15.1 18.6h3.8"/></g></symbol>
+    <symbol id="i-fan" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10a2.5 2.5 0 1 0-2.5-2.5"/><path d="M3 12h15a2.5 2.5 0 1 1-2.5 2.5"/><path d="M3 16h7"/></g></symbol>
+    <symbol id="i-temp" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13.6V5.5a2 2 0 0 1 4 0v8.1a3.5 3.5 0 1 1-4 0z"/><path d="M12 16.5V9"/></g></symbol>
+    <symbol id="i-dual" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 13.6V5.5a2 2 0 0 1 4 0v8.1a3.5 3.5 0 1 1-4 0z"/><path d="M14.5 13.6V5.5a2 2 0 0 1 4 0v8.1a3.5 3.5 0 1 1-4 0z"/><path d="M7.5 16.5V10M16.5 16.5V7"/></g></symbol>
+    <symbol id="i-wheel" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6.5"/><circle cx="12" cy="15" r="1.8"/><path d="M5.6 14h4.6M13.8 14h4.6M12 16.8v4.7"/><path d="M8.5 6.5c-.9-.9.9-1.8 0-2.7M12 6.5c-.9-.9.9-1.8 0-2.7M15.5 6.5c-.9-.9.9-1.8 0-2.7"/></g></symbol>
+    <symbol id="i-steer" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2"/><path d="M3.6 11h6.2M14.2 11h6.2M12 14.2v6.2"/></g></symbol>
+    <symbol id="i-vent" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 4.2a1 1 0 0 1 1.9-.4L9 13h7.5a1.5 1.5 0 0 1 0 3H8.6a1.5 1.5 0 0 1-1.5-1.2z"/><path d="M12 16v4.5M9 20.5h6"/><path d="M13 10V4.5M11.3 6.2 13 4.5l1.7 1.7M18 10V4.5M16.3 6.2 18 4.5l1.7 1.7"/></g></symbol>
+    <symbol id="i-heat" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 4.2a1 1 0 0 1 1.9-.4L9 13h7.5a1.5 1.5 0 0 1 0 3H8.6a1.5 1.5 0 0 1-1.5-1.2z"/><path d="M12 16v4.5M9 20.5h6"/><path d="M13.5 10.5c-.9-.9.9-1.8 0-2.7s.9-1.8 0-2.7M17.5 10.5c-.9-.9.9-1.8 0-2.7s.9-1.8 0-2.7"/></g></symbol>
+    <symbol id="i-light" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6c-4 0-6.5 2.6-6.5 6s2.5 6 6.5 6c.8 0 1.2-.4 1.2-1.1V7.1C12.2 6.4 11.8 6 11 6z"/><path d="M15.5 8h4.5M15.5 12h4.5M15.5 16h4.5"/><path d="M6.8 14.6l1.6-4.2 1.6 4.2M7.3 13.3h2.2"/></g></symbol>
+    <symbol id="i-cruise" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.2 17.5a8.5 8.5 0 1 1 15.6 0"/><path d="M12 14.5l3.8-4.3"/><circle cx="12" cy="14.5" r="1.4"/><path d="M7 9.8l.9.9M12 7.2v1.2"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.3l2.6 2.6 5-5.4"/></g></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></g></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path fill="currentColor" d="M11 2.5l2.1 6.4 6.4 2.1-6.4 2.1L11 19.5l-2.1-6.4L2.5 11l6.4-2.1zM19 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></symbol>
+    <symbol id="car" viewBox="0 0 300 560">
+      <g style="fill:var(--ti)"><rect x="34" y="104" width="20" height="72" rx="9"/><rect x="246" y="104" width="20" height="72" rx="9"/><rect x="34" y="396" width="20" height="72" rx="9"/><rect x="246" y="396" width="20" height="72" rx="9"/></g>
+      <path d="M150 18C205 18 246 40 252 92L258 200C262 300 262 400 254 470C248 520 210 542 150 542C90 542 52 520 46 470C38 400 38 300 42 200L48 92C54 40 95 18 150 18Z" style="fill:var(--cb);stroke:var(--cs)" stroke-width="2"/>
+      <path d="M38 200c-10-2-18 0-18 6s8 8 18 8z" style="fill:var(--cb);stroke:var(--cs)" stroke-width="2"/>
+      <path d="M262 200c10-2 18 0 18 6s-8 8-18 8z" style="fill:var(--cb);stroke:var(--cs)" stroke-width="2"/>
+      <g stroke-linecap="round" fill="none" stroke-width="7"><path d="M70 72C84 54 104 45 126 42" style="stroke:var(--hl)"/><path d="M230 72C216 54 196 45 174 42" style="stroke:var(--hl)"/><path d="M84 522C104 532 122 535 134 536" style="stroke:var(--tl)"/><path d="M216 522C196 532 178 535 166 536" style="stroke:var(--tl)"/></g>
+      <path d="M76 152C110 134 190 134 224 152L216 202C186 194 114 194 84 202Z" style="fill:var(--cg)"/>
+      <path d="M88 470C120 478 180 478 212 470L218 500C186 510 114 510 82 500Z" style="fill:var(--cg)"/>
+      <rect x="62" y="202" width="176" height="266" rx="26" style="fill:var(--cc)"/>
+      <path d="M64 206C110 194 190 194 236 206L236 228L64 228Z" style="fill:var(--cd)"/>
+      <rect x="134" y="200" width="32" height="20" rx="4" style="fill:var(--sc)"/>
+      <rect x="80" y="232" width="50" height="12" rx="6" fill="none" style="stroke:var(--cw)" stroke-width="3"/>
+      <rect x="141" y="232" width="18" height="104" rx="8" style="fill:var(--co)"/>
+      <g style="fill:var(--se)"><rect x="78" y="268" width="54" height="50" rx="12"/><rect x="168" y="268" width="54" height="50" rx="12"/><rect x="78" y="384" width="144" height="52" rx="16"/></g>
+      <g style="fill:var(--sb)"><rect x="80" y="318" width="50" height="20" rx="8"/><rect x="170" y="318" width="50" height="20" rx="8"/><rect x="80" y="436" width="140" height="16" rx="7"/></g>
+    </symbol>
+  </defs>
+</svg>
+
+<h2>상황별 화면</h2>
+<p class="subtitle">가로 화면 기준이에요. 왼쪽 지도와 진행 원은 늘 같은 자리에 있고, 오른쪽만 상황에 따라 바뀌어요. 점이 깜빡이는 움직임도 실제 앱에 넣을 예정이에요.</p>
+
+<!-- 1. 첫 실행 -->
+<div class="state">
+  <div class="scale"><div class="pm">
+    <div class="L">
+      <div class="Lh"><span data-ring="0"></span><div><div class="Lt">내 차 기능</div><div class="sub">6개가 기다리고 있어요</div></div></div>
+      <div data-map='{}' data-h="430"></div>
+      <div class="legend sub"><span><span class="dot" style="background:#0064FF"></span> 이번 안내</span><span><span class="dot" style="background:#02C265"></span> 익힘</span><span><span class="dot" style="border:1.5px solid #B9BDC5"></span> 아직</span></div>
+    </div>
+    <div class="R">
+      <div class="lbl">안 써본 기능</div>
+      <div class="row" style="margin-top:12px">
+        <div class="tile t-violet"><svg><use href="#i-spark"/></svg></div>
+        <div class="h1">운전을 마치면<br>놓친 기능 하나를<br>알려 드려요</div>
+      </div>
+      <div style="display:grid;gap:10px;margin-top:24px">
+        <div class="cw step"><span class="num" style="background:#0064FF">1</span><div><div class="ct">평소처럼 운전하세요</div><div class="sub">주행 중에는 말하지 않고 지켜보기만 해요</div></div></div>
+        <div class="cw step"><span class="num" style="background:#0064FF">2</span><div><div class="ct">P에 놓으면 딱 한 가지</div><div class="sub">이번 운전에서 쓸 만했던 기능을 음성과 화면으로</div></div></div>
+        <div class="cw step"><span class="num" style="background:#02C265">3</span><div><div class="ct">써 보면 지도에 초록불</div><div class="sub">익힌 기능은 다시 알려 드리지 않아요</div></div></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="desc"><h3>1. 첫 실행</h3><p>운전 기록이 없을 때예요. 지도의 점 6개가 모두 회색이고, 진행 원은 0/6이에요. 오른쪽은 앱이 무엇을 하는지 세 단계로 설명해요.</p></div>
+</div>
+
+<!-- 2. 주행 중 -->
+<div class="state">
+  <div class="scale"><div class="pm">
+    <div class="L">
+      <div class="Lh" style="opacity:.45"><span data-ring="1"></span><div><div class="Lt">내 차 기능</div><div class="sub">1개 익힘</div></div></div>
+      <div style="position:relative"><div data-map='{"wheel":"g"}' data-h="430" style="opacity:.32;filter:grayscale(1)"></div>
+        <div style="position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);background:#131417;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:999px;white-space:nowrap">조용히 지켜보는 중</div></div>
+    </div>
+    <div class="R" style="justify-content:center">
+      <div class="tile" style="width:96px;height:96px;border-radius:22px;background:#EAF1FF;color:#0064FF"><svg style="width:54px;height:54px"><use href="#i-steer"/></svg></div>
+      <div class="h1" style="font-size:36px;margin-top:24px">운전 중이에요</div>
+      <div class="bd" style="font-size:17px;margin-top:10px">차를 세우고 P에 놓으면 알려 드릴게요.</div>
+      <div class="cw" style="margin-top:28px;padding:12px 16px;display:flex;gap:10px;align-items:center;align-self:flex-start"><span class="dot" style="background:#02C265;width:9px;height:9px"></span><span class="sub" style="font-size:13px">주행 중에는 말하지도, 화면을 바꾸지도 않아요</span></div>
+    </div>
+  </div></div>
+  <div class="desc"><h3>2. 주행 중 (D)</h3><p>큰 글자 두 줄만 남기고, 지도는 흐리게 가라앉혀요. 주행 중에는 화면이 바뀌지 않아요.</p><p>실제 차가 움직이면(속도 0 초과) Pleos가 이 앱 화면을 가릴 수 있어요. 신호 대기나 에뮬레이터 시연에서 보이는 화면이에요.</p></div>
+</div>
+
+<!-- 3. 안내 -->
+<div class="state">
+  <div class="scale"><div class="pm">
+    <div class="L">
+      <div class="Lh"><span data-ring="1"></span><div><div class="Lt">내 차 기능</div><div class="sub">1개 익힘 · 5개 남음</div></div></div>
+      <div data-map='{"auto":"b","wheel":"g"}' data-h="430"></div>
+      <div class="legend sub"><span><span class="dot" style="background:#0064FF"></span> 이번 안내</span><span><span class="dot" style="background:#02C265"></span> 익힘</span><span><span class="dot" style="border:1.5px solid #B9BDC5"></span> 아직</span></div>
+    </div>
+    <div class="R">
+      <div class="lbl">방금 끝난 운전 · 23분</div>
+      <div class="row" style="margin-top:12px">
+        <div class="tile t-blue"><svg><use href="#i-auto"/></svg></div>
+        <div><div class="h1">다음엔 공조 AUTO를<br>켜 보세요</div><div class="bd" style="margin-top:8px">바람과 온도를 손으로 3번 바꾸셨어요.</div></div>
+      </div>
+      <div class="cw" style="padding:14px 16px 12px;margin-top:18px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="ct">이번 운전에서 손으로 바꾼 순간</div><div class="sub">3번</div></div>
+        <div style="position:relative;height:62px;margin-top:6px">
+          <div style="position:absolute;left:0;right:0;top:22px;height:4px;border-radius:2px;background:linear-gradient(90deg,#D6E3FF,#0064FF)"></div>
+          <div style="position:absolute;left:13%;top:10px;transform:translateX(-50%);text-align:center"><div style="width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #0064FF;color:#0064FF;display:flex;align-items:center;justify-content:center;margin:0 auto"><svg style="width:16px;height:16px"><use href="#i-fan"/></svg></div><div class="sub" style="margin-top:3px;white-space:nowrap">3분 · 풍량 2→4</div></div>
+          <div style="position:absolute;left:37%;top:10px;transform:translateX(-50%);text-align:center"><div style="width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #0064FF;color:#0064FF;display:flex;align-items:center;justify-content:center;margin:0 auto"><svg style="width:16px;height:16px"><use href="#i-fan"/></svg></div><div class="sub" style="margin-top:3px;white-space:nowrap">8분 · 풍량 4→5</div></div>
+          <div style="position:absolute;left:70%;top:10px;transform:translateX(-50%);text-align:center"><div style="width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #0064FF;color:#0064FF;display:flex;align-items:center;justify-content:center;margin:0 auto"><svg style="width:16px;height:16px"><use href="#i-temp"/></svg></div><div class="sub" style="margin-top:3px;white-space:nowrap">16분 · 온도 24→23</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between" class="sub"><span>출발</span><span>도착 23분</span></div>
+      </div>
+      <div class="cw" style="padding:14px 16px;margin-top:12px;display:flex;gap:16px;align-items:center">
+        <div style="background:#17181C;border-radius:10px;padding:11px 10px;display:flex;gap:6px;align-items:center;flex:none">
+          <span style="font-size:10.5px;color:#8B8F98;padding:5px 6px;border:1px solid #33353B;border-radius:6px">A/C</span>
+          <span class="glow" style="font-size:12px;font-weight:800;color:#fff;background:#0064FF;padding:6px 9px;border-radius:6px">AUTO</span>
+          <span style="font-size:10.5px;color:#8B8F98;padding:5px 6px;border:1px solid #33353B;border-radius:6px">DUAL</span>
+          <span style="font-size:12px;color:#E7E8EA;font-weight:700;margin-left:2px">23.0°</span>
+        </div>
+        <div><div class="ct">여기를 누르세요</div><div class="sub" style="margin-top:2px">공조 패널 가운데 AUTO.<br>온도만 정하면 풍량은 차가 맞춰요.</div></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="desc"><h3>3. 운전 직후 안내</h3><p>P에 놓는 순간 음성과 함께 이 화면이 돼요. 지도의 공조 점이 파랗게 깜빡여요.</p><p>근거 타임라인은 기능마다 내용이 달라요. 예를 들어 오토 라이트는 전조등을 켜고 끈 순간을, 크루즈는 운전 길이를 보여 줘요.</p></div>
+</div>
+
+<!-- 4. 써 보셨네요 -->
+<div class="state">
+  <div class="scale"><div class="pm">
+    <div class="L">
+      <div class="Lh"><span data-ring="2"></span><div><div class="Lt">내 차 기능</div><div class="sub">2개 익힘 · 4개 남음</div></div></div>
+      <div data-map='{"auto":"new","wheel":"g"}' data-h="430"></div>
+      <div class="legend sub"><span><span class="dot" style="background:#0064FF"></span> 이번 안내</span><span><span class="dot" style="background:#02C265"></span> 익힘</span><span><span class="dot" style="border:1.5px solid #B9BDC5"></span> 아직</span></div>
+    </div>
+    <div class="R">
+      <div class="lbl">방금 끝난 운전 · 18분</div>
+      <div class="row" style="margin-top:12px">
+        <div class="tile t-green"><svg><use href="#i-auto"/></svg><span class="badge"><svg><use href="#i-check"/></svg></span></div>
+        <div><div class="h1">공조 AUTO,<br>써 보셨네요!</div><div class="bd" style="margin-top:8px">이제 다시 알려 드리지 않아요.</div></div>
+      </div>
+      <div class="cw" style="padding:16px 18px;margin-top:20px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="ct">도감</div><div class="sub"><b style="color:#02C265;font-size:15px">2</b> / 6 익힘</div></div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px">
+          <span style="height:10px;border-radius:5px;background:#02C265"></span><span style="height:10px;border-radius:5px;background:#02C265;box-shadow:0 0 0 3px rgba(2,194,101,.25)"></span><span style="height:10px;border-radius:5px;background:#E3E5EA"></span><span style="height:10px;border-radius:5px;background:#E3E5EA"></span><span style="height:10px;border-radius:5px;background:#E3E5EA"></span><span style="height:10px;border-radius:5px;background:#E3E5EA"></span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <span class="chip" style="background:#E6F9EF;color:#019A50"><svg><use href="#i-wheel"/></svg>운전대 열선</span>
+          <span class="chip" style="background:#02C265;color:#fff"><svg><use href="#i-auto"/></svg>공조 AUTO · 새로</span>
+        </div>
+      </div>
+      <div class="cw" style="padding:14px 18px;margin-top:12px;display:flex;gap:12px;align-items:center">
+        <span style="width:34px;height:34px;border-radius:9px;background:#E6F9EF;color:#02C265;display:flex;align-items:center;justify-content:center;flex:none"><svg style="width:20px;height:20px"><use href="#i-clock"/></svg></span>
+        <div><div class="ct">처음 쓴 순간</div><div class="sub">11월 8일 오전 9:53 · 운전을 시작하고 2분 뒤</div></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="desc"><h3>4. "써 보셨네요" 확인</h3><p>안내한 기능을 실제로 쓰면 초록으로 바뀌고 도감 칸이 하나 채워져요. 지도의 점은 반짝이며 초록이 돼요.</p><p>확인과 새 안내가 한 운전에 같이 오면, 새 안내 화면 위쪽에 초록 띠로 "공조 AUTO, 써 보셨네요"를 함께 보여 줘요.</p></div>
+</div>
+
+<!-- 5. 놓친 기능 없음 -->
+<div class="state">
+  <div class="scale"><div class="pm">
+    <div class="L">
+      <div class="Lh"><span data-ring="2"></span><div><div class="Lt">내 차 기능</div><div class="sub">2개 익힘 · 4개 남음</div></div></div>
+      <div data-map='{"auto":"g","wheel":"g"}' data-h="430"></div>
+      <div class="legend sub"><span><span class="dot" style="background:#0064FF"></span> 이번 안내</span><span><span class="dot" style="background:#02C265"></span> 익힘</span><span><span class="dot" style="border:1.5px solid #B9BDC5"></span> 아직</span></div>
+    </div>
+    <div class="R">
+      <div class="lbl">방금 끝난 운전 · 12분</div>
+      <div class="row" style="margin-top:12px">
+        <div class="tile" style="background:#EDEEF2;color:#5E6168"><svg><use href="#i-ok"/></svg></div>
+        <div><div class="h1">이번 운전에선<br>권할 기능이 없었어요</div><div class="bd" style="margin-top:8px">다음 운전도 지켜볼게요.</div></div>
+      </div>
+      <div class="cw" style="padding:16px 18px;margin-top:20px">
+        <div class="ct">이번 운전에서 쓴 기능</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <span class="chip" style="background:#E6F9EF;color:#019A50"><svg><use href="#i-auto"/></svg>공조 AUTO</span>
+          <span class="chip" style="background:#E6F9EF;color:#019A50"><svg><use href="#i-wheel"/></svg>운전대 열선</span>
+        </div>
+      </div>
+      <div class="cw" style="padding:16px 18px;margin-top:12px">
+        <div class="ct">아직 남은 기능 4개</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <span class="chip" style="background:#F1F2F5;color:#7A7D85"><svg><use href="#i-dual"/></svg>동승석 개별 온도</span>
+          <span class="chip" style="background:#F1F2F5;color:#7A7D85"><svg><use href="#i-vent"/></svg>통풍 시트</span>
+          <span class="chip" style="background:#F1F2F5;color:#7A7D85"><svg><use href="#i-light"/></svg>오토 라이트</span>
+          <span class="chip" style="background:#F1F2F5;color:#7A7D85"><svg><use href="#i-cruise"/></svg>크루즈 컨트롤</span>
+        </div>
+        <div class="sub" style="margin-top:8px">쓸 만한 순간이 오면 그 운전이 끝날 때 알려 드릴게요.</div>
+      </div>
+    </div>
+  </div></div>
+  <div class="desc"><h3>5. 권할 기능이 없을 때</h3><p>운전은 했지만 놓친 기능이 없거나 짧은 운전이었을 때예요. 이번 운전에서 쓴 기능과 아직 남은 기능을 보여 줘요.</p></div>
+</div>
+
+<!-- 6. 도감 완성 -->
+<div class="state">
+  <div class="scale"><div class="pm">
+    <div class="L">
+      <div class="Lh"><span data-ring="6"></span><div><div class="Lt">내 차 기능</div><div class="sub">6개 모두 익힘</div></div></div>
+      <div data-map='{"auto":"g","wheel":"g","dual":"g","vent":"g","light":"g","cruise":"g"}' data-h="430"></div>
+      <div class="legend sub"><span><span class="dot" style="background:#02C265"></span> 모두 익힘</span></div>
+    </div>
+    <div class="R">
+      <svg width="420" height="200" viewBox="0 0 420 200" style="position:absolute;right:0;top:0;opacity:.9">
+        <g><circle cx="300" cy="30" r="5" fill="#0064FF"/><circle cx="360" cy="70" r="4" fill="#02C265"/><circle cx="250" cy="60" r="3" fill="#5A46FA"/><rect x="390" y="26" width="9" height="4" rx="2" fill="#FFB800" transform="rotate(30 394 28)"/><rect x="330" y="110" width="9" height="4" rx="2" fill="#0064FF" transform="rotate(-25 334 112)"/><circle cx="398" cy="140" r="4" fill="#FE3D16"/><rect x="210" y="22" width="8" height="4" rx="2" fill="#02C265" transform="rotate(50 214 24)"/></g>
+      </svg>
+      <div class="lbl">도감 완성</div>
+      <div class="row" style="margin-top:12px">
+        <span data-ring="6" data-size="108"></span>
+        <div><div class="h1">내 차 기능 6개를<br>모두 익혔어요</div><div class="bd" style="margin-top:8px">11월 8일부터 운전 14번 만이에요.</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px">
+        <div class="cw" style="padding:12px;display:flex;gap:10px;align-items:center"><span style="width:34px;height:34px;border-radius:9px;background:#02C265;color:#fff;display:flex;align-items:center;justify-content:center;flex:none"><svg style="width:20px;height:20px"><use href="#i-auto"/></svg></span><div><div class="ct">공조 AUTO</div><div class="sub" style="font-size:11px">11월 8일</div></div></div>
+        <div class="cw" style="padding:12px;display:flex;gap:10px;align-items:center"><span style="width:34px;height:34px;border-radius:9px;background:#02C265;color:#fff;display:flex;align-items:center;justify-content:center;flex:none"><svg style="width:20px;height:20px"><use href="#i-dual"/></svg></span><div><div class="ct">동승석 온도</div><div class="sub" style="font-size:11px">11월 10일</div></div></div>
+        <div class="cw" style="padding:12px;display:flex;gap:10px;align-items:center"><span style="width:34px;height:34px;border-radius:9px;background:#02C265;color:#fff;display:flex;align-items:center;justify-content:center;flex:none"><svg style="width:20px;height:20px"><use href="#i-wheel"/></svg></span><div><div class="ct">운전대 열선</div><div class="sub" style="font-size:11px">11월 8일</div></div></div>
+        <div class="cw" style="padding:12px;display:flex;gap:10px;align-items:center"><span style="width:34px;height:34px;border-radius:9px;background:#02C265;color:#fff;display:flex;align-items:center;justify-content:center;flex:none"><svg style="width:20px;height:20px"><use href="#i-vent"/></svg></span><div><div class="ct">통풍 시트</div><div class="sub" style="font-size:11px">11월 14일</div></div></div>
+        <div class="cw" style="padding:12px;display:flex;gap:10px;align-items:center"><span style="width:34px;height:34px;border-radius:9px;background:#02C265;color:#fff;display:flex;align-items:center;justify-content:center;flex:none"><svg style="width:20px;height:20px"><use href="#i-light"/></svg></span><div><div class="ct">오토 라이트</div><div class="sub" style="font-size:11px">11월 17일</div></div></div>
+        <div class="cw" style="padding:12px;display:flex;gap:10px;align-items:center"><span style="width:34px;height:34px;border-radius:9px;background:#02C265;color:#fff;display:flex;align-items:center;justify-content:center;flex:none"><svg style="width:20px;height:20px"><use href="#i-cruise"/></svg></span><div><div class="ct">크루즈</div><div class="sub" style="font-size:11px">11월 20일</div></div></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="desc"><h3>6. 도감 완성</h3><p>6개를 다 익히면 지도 전체가 초록이 되고, 익힌 날짜를 모아 보여 줘요. 이후에는 더 알려 드릴 기능이 없어요.</p></div>
+</div>
+
+<!-- 7. 기능 카드 -->
+<div class="state">
+  <div class="scale"><div class="pm">
+    <div class="L">
+      <div class="Lh"><span data-ring="1"></span><div><div class="Lt">내 차 기능</div><div class="sub">1개 익힘 · 5개 남음</div></div></div>
+      <div data-map='{"auto":"b","wheel":"g","vent":"sel"}' data-h="430"></div>
+      <div class="legend sub"><span><span class="dot" style="background:#0064FF"></span> 이번 안내</span><span><span class="dot" style="background:#02C265"></span> 익힘</span><span><span class="dot" style="border:1.5px solid #B9BDC5"></span> 아직</span></div>
+    </div>
+    <div class="R">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div class="lbl">기능 카드</div><span style="font-size:12px;font-weight:700;color:#3A3C42;background:#EDEEF2;padding:6px 12px;border-radius:999px">✕ 닫기</span></div>
+      <div class="row" style="margin-top:10px">
+        <div class="tile t-grey"><svg><use href="#i-vent"/></svg></div>
+        <div><div class="h1">통풍 시트</div><span class="chip" style="background:#EDEEF2;color:#6B6E76;margin-top:10px">아직 만나지 않았어요</span></div>
+      </div>
+      <div class="cw" style="padding:14px 18px;margin-top:18px">
+        <div class="ct">언제 쓰면 좋아요</div>
+        <div class="bd" style="font-size:13px;margin-top:4px">에어컨을 21° 아래로 틀 만큼 더운 날. 시트에서 바람이 나와 등과 허벅지가 덜 더워요.</div>
+      </div>
+      <div class="cw" style="padding:14px 18px;margin-top:12px;display:flex;gap:16px;align-items:center">
+        <div style="background:#17181C;border-radius:10px;padding:9px 10px;display:flex;gap:7px;align-items:center;flex:none">
+          <span style="width:30px;height:30px;border:1px solid #33353B;border-radius:6px;color:#8B8F98;display:flex;align-items:center;justify-content:center"><svg style="width:18px;height:18px"><use href="#i-heat"/></svg></span>
+          <span class="glow" style="width:34px;height:34px;background:#0064FF;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center"><svg style="width:20px;height:20px"><use href="#i-vent"/></svg></span>
+          <span style="font-size:10.5px;color:#8B8F98;padding:5px 6px;border:1px solid #33353B;border-radius:6px">A/C</span>
+        </div>
+        <div><div class="ct">어디에 있나요</div><div class="sub" style="margin-top:2px">공조 화면의 시트 통풍 버튼.<br>단계를 올릴수록 바람이 세요.</div></div>
+      </div>
+      <div class="sub" style="margin-top:auto">에어컨을 낮게 트는 운전이 끝나면 알려 드릴게요.</div>
+    </div>
+  </div></div>
+  <div class="desc"><h3>7. 기능 카드</h3><p>지도의 점(세로 화면은 목록)을 누르면 그 기능의 도감 카드가 열려요. 언제 쓰면 좋은지와 어디에 있는지를 보여 줘요. 익힌 기능이면 초록 카드에 처음 쓴 날짜가 나와요.</p><p>정차 중에만 누를 수 있어요.</p></div>
+</div>
+
+<!-- 8. 다크 테마 -->
+<div class="state">
+  <div class="scale"><div class="pm dark">
+    <div class="L">
+      <div class="Lh"><span data-ring="1" data-dark="1"></span><div><div class="Lt">내 차 기능</div><div class="sub">1개 익힘 · 5개 남음</div></div></div>
+      <div data-map='{"auto":"b","wheel":"g"}' data-h="430" data-dark="1"></div>
+      <div class="legend sub"><span><span class="dot" style="background:#0082FF"></span> 이번 안내</span><span><span class="dot" style="background:#00E074"></span> 익힘</span><span><span class="dot" style="border:1.5px solid #5A5F69"></span> 아직</span></div>
+    </div>
+    <div class="R">
+      <div class="lbl">방금 끝난 운전 · 23분</div>
+      <div class="row" style="margin-top:12px">
+        <div class="tile t-blue"><svg><use href="#i-auto"/></svg></div>
+        <div><div class="h1">다음엔 공조 AUTO를<br>켜 보세요</div><div class="bd" style="margin-top:8px">바람과 온도를 손으로 3번 바꾸셨어요.</div></div>
+      </div>
+      <div class="cw" style="padding:14px 16px 12px;margin-top:18px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="ct">이번 운전에서 손으로 바꾼 순간</div><div class="sub">3번</div></div>
+        <div style="position:relative;height:62px;margin-top:6px">
+          <div style="position:absolute;left:0;right:0;top:22px;height:4px;border-radius:2px;background:linear-gradient(90deg,#1B3157,#0082FF)"></div>
+          <div style="position:absolute;left:13%;top:10px;transform:translateX(-50%);text-align:center"><div style="width:28px;height:28px;border-radius:50%;background:#131417;border:2px solid #0082FF;color:#3FA0FF;display:flex;align-items:center;justify-content:center;margin:0 auto"><svg style="width:16px;height:16px"><use href="#i-fan"/></svg></div><div class="sub" style="margin-top:3px;white-space:nowrap">3분 · 풍량 2→4</div></div>
+          <div style="position:absolute;left:37%;top:10px;transform:translateX(-50%);text-align:center"><div style="width:28px;height:28px;border-radius:50%;background:#131417;border:2px solid #0082FF;color:#3FA0FF;display:flex;align-items:center;justify-content:center;margin:0 auto"><svg style="width:16px;height:16px"><use href="#i-fan"/></svg></div><div class="sub" style="margin-top:3px;white-space:nowrap">8분 · 풍량 4→5</div></div>
+          <div style="position:absolute;left:70%;top:10px;transform:translateX(-50%);text-align:center"><div style="width:28px;height:28px;border-radius:50%;background:#131417;border:2px solid #0082FF;color:#3FA0FF;display:flex;align-items:center;justify-content:center;margin:0 auto"><svg style="width:16px;height:16px"><use href="#i-temp"/></svg></div><div class="sub" style="margin-top:3px;white-space:nowrap">16분 · 온도 24→23</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between" class="sub"><span>출발</span><span>도착 23분</span></div>
+      </div>
+      <div class="cw" style="padding:14px 16px;margin-top:12px;display:flex;gap:16px;align-items:center">
+        <div style="background:#0B0C0E;border:1px solid #2A2C31;border-radius:10px;padding:11px 10px;display:flex;gap:6px;align-items:center;flex:none">
+          <span style="font-size:10.5px;color:#8B8F98;padding:5px 6px;border:1px solid #33353B;border-radius:6px">A/C</span>
+          <span class="glow" style="font-size:12px;font-weight:800;color:#fff;background:#0082FF;padding:6px 9px;border-radius:6px">AUTO</span>
+          <span style="font-size:10.5px;color:#8B8F98;padding:5px 6px;border:1px solid #33353B;border-radius:6px">DUAL</span>
+          <span style="font-size:12px;color:#E7E8EA;font-weight:700;margin-left:2px">23.0°</span>
+        </div>
+        <div><div class="ct">여기를 누르세요</div><div class="sub" style="margin-top:2px">공조 패널 가운데 AUTO.<br>온도만 정하면 풍량은 차가 맞춰요.</div></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="desc"><h3>8. 다크 테마</h3><p>Pleos는 라이트·다크 테마를 둘 다 써요. 차가 다크 테마면 Pleos 다크 색(배경 #131417, 파랑 #0082FF, 초록 #00E074)으로 바뀌어요. 3번 화면과 같은 순간이에요.</p></div>
+</div>
+
+<!-- 상태 줄 -->
+<div class="state">
+  <div style="width:605px;display:grid;gap:10px;font-family:'Asta Sans',system-ui,sans-serif">
+    <div style="background:#FFF4EF;border:1px solid #FFD3C4;color:#B5300E;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:#FE3D16"></span>차 신호를 받지 못하고 있어요 · 10초마다 다시 연결해요</div>
+    <div style="background:#F1F2F5;border:1px solid #E3E5EA;color:#5E6168;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:#8B8F98"></span>이 차는 크루즈 신호를 주지 않아요 · 지도에서 흐리게 보여요</div>
+  </div>
+  <div class="desc"><h3>그 밖의 알림 줄</h3><p>오른쪽 위에 얇은 띠로 떠요. 연결이 돌아오면 사라지고, 신호가 없는 기능은 지도에서 흐리게 바뀌어요.</p></div>
+</div>
+
+<script>
+(function(){
+  var P={light:[88,66,'i-light'],auto:[150,186,'i-auto'],wheel:[126,246,'i-wheel'],cruise:[76,256,'i-cruise'],vent:[105,294,'i-vent'],dual:[195,294,'i-dual']};
+  function spot(k,v,dk){
+    var x=P[k][0],y=P[k][1],ic=P[k][2];
+    function ico(c,s){return '<use href="#'+ic+'" x="'+(x-s/2)+'" y="'+(y-s/2)+'" width="'+s+'" height="'+s+'" style="color:'+c+'"/>';}
+    var blue=dk?'#0082FF':'#0064FF',green=dk?'#00C466':'#02C265';
+    if(v==='b')return '<circle class="pulse" cx="'+x+'" cy="'+y+'" r="17" fill="'+blue+'"/><circle cx="'+x+'" cy="'+y+'" r="17" fill="'+blue+'" stroke="'+(dk?'#1D1E21':'#fff')+'" stroke-width="2"/>'+ico('#fff',22);
+    if(v==='g')return '<circle cx="'+x+'" cy="'+y+'" r="15" fill="'+green+'"/>'+ico('#fff',20);
+    if(v==='new')return '<circle class="pulse-g" cx="'+x+'" cy="'+y+'" r="17" fill="'+green+'"/><circle cx="'+x+'" cy="'+y+'" r="17" fill="'+green+'" stroke="#fff" stroke-width="2"/>'+ico('#fff',22)+'<g stroke="'+green+'" stroke-width="3" stroke-linecap="round"><path d="M'+x+' '+(y-26)+'v-8M'+(x+21)+' '+(y-17)+'l6-6M'+(x-21)+' '+(y-17)+'l-6-6"/></g>';
+    if(v==='sel')return '<circle cx="'+x+'" cy="'+y+'" r="22" fill="none" stroke="#131417" stroke-width="2.5"/><circle cx="'+x+'" cy="'+y+'" r="16" fill="#fff" stroke="#131417" stroke-width="1.5"/>'+ico('#131417',20);
+    return '<circle cx="'+x+'" cy="'+y+'" r="15" fill="'+(dk?'#313236':'#fff')+'" stroke="'+(dk?'#44464E':'#CDD1D8')+'" stroke-width="1.5"/>'+ico(dk?'#8B8F98':'#8B8F98',20);
+  }
+  function map(st,h,dk){var s='<svg viewBox="0 0 300 560" style="height:'+h+'px;display:block;margin:6px auto 0"'+(dk?' class="dk"':'')+'><use href="#car" width="300" height="560"/>';for(var k in P)s+=spot(k,st[k],dk);return s+'</svg>';}
+  function ring(n,size,dk){var r=19,c=2*Math.PI*r,len=c*n/6;return '<svg viewBox="0 0 48 48" width="'+size+'" height="'+size+'" style="display:block"><circle cx="24" cy="24" r="'+r+'" fill="none" stroke="'+(dk?'#313236':'#DADDE3')+'" stroke-width="5"/>'+(n?'<circle cx="24" cy="24" r="'+r+'" fill="none" stroke="'+(dk?'#00E074':'#02C265')+'" stroke-width="5" stroke-linecap="round" stroke-dasharray="'+len+' '+c+'" transform="rotate(-90 24 24)"/>':'')+'<text x="24" y="28.5" text-anchor="middle" font-size="12" font-weight="800" fill="'+(dk?'#F2F3F5':'#131417')+'" font-family="Asta Sans, sans-serif">'+n+'/6</text></svg>';}
+  document.querySelectorAll('[data-map]').forEach(function(el){el.innerHTML=map(JSON.parse(el.dataset.map),+(el.dataset.h||430),el.dataset.dark==='1');});
+  document.querySelectorAll('[data-ring]').forEach(function(el){el.innerHTML=ring(+el.dataset.ring,+(el.dataset.size||46),el.dataset.dark==='1');});
+})();
+</script>
