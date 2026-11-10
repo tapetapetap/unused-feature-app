@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 디버그 빌드 전용(4차 specs/004-visible-tips research R4). 출시 빌드에는 없다.
+     DUMP 권한은 adb shell만 가지므로 일반 앱은 이 수신기를 부를 수 없다 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <receiver
+            android:name=".SeedReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
+    </application>
+</manifest>

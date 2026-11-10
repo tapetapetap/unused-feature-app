@@ -12,6 +12,7 @@
 #   demo.sh heat      난방 27° → "시트 열선" 안내
 #   demo.sh multi     조수석·온도·시트 열선·전조등 → 여러 번 하면 하나씩 다른 안내
 #   demo.sh reset     앱 기록 지우기(처음 설치 상태)
+#   demo.sh seed      4차: 디버그 빌드에 시연 샘플 상태(사흘 전~어제 추천 기록 6개, 익힘 2개, 운전 6번). 첫 화면은 앰비언트 안내
 VC=http://127.0.0.1:8088
 ADB=${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb
 
@@ -28,8 +29,12 @@ wait_min() { say "  … 앱 시간 $1분 ($(($1 * 6))초)"; sleep $(($1 * 6 + 1)
 
 sleep 2
 put gear gear=Park
-if [ "$1" = reset ]; then
+if [ "$1" = reset ] || [ "$1" = seed ]; then
   # 차를 "아무 기능도 안 쓰는" 상태로 되돌린 뒤 앱 기록을 지운다. 켜진 기능이 남아 있으면 앱이 바로 "익힘"으로 기록한다
+  # 콜드 부팅 뒤 콘솔은 한 번도 바꾸지 않은 값을 차에 보내지 않는다. 그러면 앱은 그 기능을 "신호 없음"으로 빼므로
+  # 한 번 켰다가 아래에서 끈다(시트 열선·운전대 열선·DUAL. 사이드미러 열선·오토 내/외기는 콘솔에 없다). 기록은 아래에서 지운다
+  for q in "hvac driver_seat=1" "steering-wheel-heat level=1" "hvac dual=true"; do quiet ${q% *} "${q#* }"; done
+  sleep 1
   for q in "hvac power=true" "hvac auto=false" "hvac dual=false" "hvac ac=false" "hvac recirc=false" "hvac front_defroster=false" \
            "hvac rear_defroster=false" "hvac driver_seat=0" "hvac passenger_seat=0" "hvac driver_temp=24" "hvac fan_speed=1" \
            "steering-wheel-heat level=0" "driving-mode ad_mode_state=ready" "body front_wiper=Off" "body ambient_mode=Off" \
@@ -38,10 +43,19 @@ if [ "$1" = reset ]; then
            "seat kind=occupied&area=rear_right&value=false"; do quiet ${q% *} "${q#* }"; done
   sleep 1
   $ADB shell am force-stop --user 10 kr.skku.unusedfeature
-  $ADB shell run-as kr.skku.unusedfeature --user 10 rm -f shared_prefs/progress.xml
+  if [ "$1" = seed ]; then # 디버그 수신기(DUMP 권한, adb shell만)가 progress를 비우고 샘플을 쓴다
+    $ADB shell am broadcast --user 10 --include-stopped-packages -n kr.skku.unusedfeature/.SeedReceiver >/dev/null
+    sleep 1
+    if ! $ADB shell run-as kr.skku.unusedfeature --user 10 cat shared_prefs/progress.xml 2>/dev/null | grep -q 'name="drives" value="6"'; then
+      say "샘플 상태를 넣지 못했어요. 디버그 빌드가 깔려 있는지 확인하세요"; exit 1
+    fi
+  else
+    $ADB shell run-as kr.skku.unusedfeature --user 10 rm -f shared_prefs/progress.xml
+  fi
   $ADB shell sync
   $ADB shell am start --user 10 -n kr.skku.unusedfeature/.MainActivity >/dev/null
-  say "차 상태와 앱 기록을 처음으로 되돌렸어요. 화면: 첫 실행"; exit 0
+  if [ "$1" = seed ]; then say "샘플 상태를 넣었어요. 화면: 앰비언트 라이트 안내, 추천 기록 6개"; else say "차 상태와 앱 기록을 처음으로 되돌렸어요. 화면: 첫 실행"; fi
+  exit 0
 fi
 case "$1" in
   learn)

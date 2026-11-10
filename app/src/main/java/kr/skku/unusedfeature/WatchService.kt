@@ -13,10 +13,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import java.util.Locale
+
+/** 4차: 말한 기능, 말하기 시작한 때(uptimeMillis), 실제로 말했는지 */
+data class Spoken(val feature: Feature, val at: Long, val said: Boolean)
 
 /** 운전을 지켜보다 P가 되면 놓친 기능 하나를 음성·알림으로 알린다. */
 class WatchService : Service() {
@@ -46,6 +50,10 @@ class WatchService : Service() {
 
         /** 화면이 열려 있을 때만 설정된다 */
         var onUpdate: (() -> Unit)? = null
+
+        /** 4차: 앱이 마지막으로 말한 안내(자막·소리 막대, specs/004-visible-tips data-model Spoken) */
+        @Volatile var lastSpoken: Spoken? = null
+            private set
 
         fun start(context: Context) =
             ContextCompat.startForegroundService(context, Intent(context, WatchService::class.java))
@@ -111,7 +119,7 @@ class WatchService : Service() {
             progress.record(outcome)
             learnedAtLastEnd = learnedNow
             outcome.pick?.let {
-                speak(it.speech)
+                lastSpoken = Spoken(it, SystemClock.uptimeMillis(), speak(it.speech))
                 getSystemService(NotificationManager::class.java)
                     .notify(ID_TIP, notification(CH_TIP, "안 써본 기능: ${it.title}", it.speech, ongoing = false))
             }
@@ -144,12 +152,14 @@ class WatchService : Service() {
         }
     }
 
-    private fun speak(text: String) {
+    /** 말했으면 true(엔진 준비됨, 발화 예외 없음). 자막 막대가 움직일지 정한다 */
+    private fun speak(text: String): Boolean {
         if (!ttsReady) {
             Log.w(TAG, "TTS 준비 안 됨, 음성 생략")
-            return
+            return false
         }
-        runCatching { tts?.speak(text, true) }.onFailure { Log.w(TAG, "TTS 발화 실패", it) }
+        val t = tts ?: return false
+        return runCatching { t.speak(text, true) }.onFailure { Log.w(TAG, "TTS 발화 실패", it) }.isSuccess
     }
 
     private fun notification(channel: String, title: String, text: String, ongoing: Boolean): Notification {

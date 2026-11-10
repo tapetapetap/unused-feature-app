@@ -90,6 +90,7 @@ class MainActivity : Activity() {
         val total = supported.size
         val done = supported.count { it in learned }
         val pick = progress.lastPick()
+        val spoken = WatchService.lastSpoken?.takeIf { it.feature == pick && it.said } // 이번 안내를 실제로 말했다(자막 막대)
         val confirmed = progress.lastConfirmed() ?: pick?.takeIf { it in learned }
         val state = when {
             WatchService.driving -> State.DRIVING
@@ -113,14 +114,15 @@ class MainActivity : Activity() {
         screen.addView(when (state) {
             State.DRIVING -> ui.driving(WatchService.recording)
             State.RECORD -> recordScreen(record!!, learned)
-            State.HISTORY -> ui.history(records, learned,
+            State.HISTORY -> ui.history(records, learned, WatchService.unsupported.toSet(),
                 onOpen = { listY = findViewById<ScrollView>(R.id.scroll).scrollY; openHistory = it; render() },
                 onClose = { openHistory = null; render() })
             State.ZONE -> zoneScreen(openZone!!, learned, supported)
             State.FIRST -> ui.firstRun()
             State.COMPLETE -> ui.complete(supported, progress::learnedAt, progress.firstDrive(), progress.drives())
             State.TIP -> ui.tip(pick!!, progress.lastReason(), progress.lastMarks(), driveMs,
-                progress.lastConfirmed()?.let { ui.confirmBanner(it, done, total) })
+                progress.lastConfirmed()?.let { ui.confirmBanner(it, done, total) },
+                spoken?.let { ui.caption(pick, "방금 들은 음성", it.at + 6_000) } ?: ui.caption(pick, "안내 음성", 0L))
             State.CONFIRM -> ui.confirm(confirmed!!, driveMs, supported.filter { it in learned }, total,
                 progress.learnedAt(confirmed), progress.learnedNote(confirmed))
             State.NONE -> ui.none(driveMs, progress.lastUsed().filter { it in supported }, supported.filterNot { it in learned })
@@ -135,8 +137,11 @@ class MainActivity : Activity() {
             CarMapView.Spot(fs.count { it in learned }, fs.size)
         }
         val pulse = pick?.zone?.takeIf { state == State.TIP }
+        // 4차 새 안내 강조: 가장 최근 추천 기록이 생긴 지 10초 안(앱을 늦게 열거나 seed 뒤에는 없다, research R3)
+        // 4차 새 안내 강조: 이 안내를 말한 때(uptime)부터 10초. 시계가 바뀌어도 그대로고, 앱을 새로 띄운 뒤(늦게 열기·seed)에는 없다(코드 리뷰 반영)
+        val spotlight = WatchService.lastSpoken?.takeIf { state == State.TIP && it.feature == pick }?.let { it.at + 10_000 } ?: 0L
         findViewById<CarMapView>(R.id.map).set(spots, pulse, confirmed?.zone?.takeIf { state == State.CONFIRM },
-            record?.pick?.zone ?: openZone, state == State.DRIVING) // 다시 보기는 그 구역에 선택 링
+            record?.pick?.zone ?: openZone, state == State.DRIVING, spotlight) // 다시 보기는 그 구역에 선택 링
         findViewById<RingView>(R.id.ring).set(done, total)
         findViewById<TextView>(R.id.historyButton).apply {
             text = if (records.isEmpty()) "추천 기록  ›" else "추천 기록 ${records.size}  ›"
@@ -160,7 +165,7 @@ class MainActivity : Activity() {
         val used = progress.learnedAt(r.pick).takeIf { r.pick in learned }
             ?.let { ui.chip(if (it > 0) "써 봄 ✓ ${day(it)}" else "써 봄 ✓", R.color.green_text, R.color.green_soft) }
         return ui.tip(r.pick, r.reason, r.marks, r.driveMs, ui.row(12, *listOfNotNull(back, used).toTypedArray()),
-            ui.small("${dayLabel(r.at)} ${timeOfDay(r.at)} 운전 · ${r.driveMs / MINUTE}분"))
+            ui.caption(r.pick, "그때 들은 음성", 0L), ui.small("${dayLabel(r.at)} ${timeOfDay(r.at)} 운전 · ${r.driveMs / MINUTE}분"))
     }
 
     private fun zoneScreen(z: Zone, learned: Set<Feature>, supported: List<Feature>): View {

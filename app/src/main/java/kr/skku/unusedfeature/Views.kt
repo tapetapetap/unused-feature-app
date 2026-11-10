@@ -15,7 +15,9 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+import kotlin.math.PI
 import kotlin.math.hypot
+import kotlin.math.sin
 
 private fun View.dp(v: Float) = v * resources.displayMetrics.density
 private fun View.sp(v: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, v, resources.displayMetrics)
@@ -147,12 +149,14 @@ class CarMapView(context: Context, attrs: AttributeSet? = null) : View(context, 
     private var sparkleUntil = 0L
     private var selected: Zone? = null
     private var dim = false
+    private var spotlightUntil = 0L // 4차: 새 안내 강조가 끝나는 uptime(research R3)
     var onZone: ((Zone) -> Unit)? = null
 
     private val car = context.getDrawable(R.drawable.car_top)!!
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
     private val label = textPaint(600)
+    private val strong = textPaint(800) // 강조 중 추천 구역 이름표
     private val anim = ValueAnimator.ofFloat(0f, 1f).apply {
         duration = 1800
         repeatCount = ValueAnimator.INFINITE
@@ -162,8 +166,12 @@ class CarMapView(context: Context, attrs: AttributeSet? = null) : View(context, 
     private var ox = 0f
     private var oy = 0f
 
-    fun set(spots: Map<Zone, Spot>, pulse: Zone?, sparkle: Zone?, selected: Zone?, dim: Boolean) {
+    fun set(spots: Map<Zone, Spot>, pulse: Zone?, sparkle: Zone?, selected: Zone?, dim: Boolean, spotlightUntil: Long = 0L) {
         this.spots = spots
+        this.spotlightUntil = spotlightUntil
+        val left = spotlightUntil - SystemClock.uptimeMillis()
+        // 애니메이터가 꺼져 있으면 다시 그리는 것이 없으니 10초에 한 번 더 그려 강조를 지운다(켜져 있으면 맥박이 매 프레임 그린다)
+        if (pulse != null && !dim && left > 0 && !ValueAnimator.areAnimatorsEnabled()) postInvalidateDelayed(left + 50)
         this.pulse = pulse
         if (sparkle != this.sparkle) sparkleUntil = SystemClock.uptimeMillis() + 3 * 1800 // 반짝임은 3번
         this.sparkle = sparkle
@@ -190,7 +198,10 @@ class CarMapView(context: Context, attrs: AttributeSet? = null) : View(context, 
         val t = anim.animatedValue as Float
         val r = 21 * scale
         label.textSize = sp(18f)
+        strong.textSize = sp(18f)
         val sparkling = sparkle != null && SystemClock.uptimeMillis() < sparkleUntil
+        val spot = pulse != null && !dim && SystemClock.uptimeMillis() < spotlightUntil
+        val moving = ValueAnimator.areAnimatorsEnabled()
         if (pulse == null && !sparkling) anim.cancel() // 반짝임 3번이 끝나면 다시 그리지 않는다
         for (z in Zone.entries) {
             val s = spots[z] ?: Spot(0, 0)
@@ -210,6 +221,18 @@ class CarMapView(context: Context, attrs: AttributeSet? = null) : View(context, 
                 fill.color = base
                 fill.alpha = ((1 - t) * 140).toInt()
                 c.drawCircle(px, py, r * (1 + 1.2f * t), fill)
+            }
+            // 4차 새 안내 강조: r에서 3.4r까지 1.2초마다 퍼지는 테두리 링, 움직임 줄이기면 고정 테두리
+            if (hot && spot) {
+                stroke.color = color(R.color.blue)
+                if (moving) {
+                    val k = (SystemClock.uptimeMillis() % 1200) / 1200f
+                    stroke.alpha = ((1 - k) * 200).toInt(); stroke.strokeWidth = dp(3f)
+                    c.drawCircle(px, py, r * (1 + 2.4f * k), stroke)
+                } else {
+                    stroke.alpha = 255; stroke.strokeWidth = dp(4f)
+                    c.drawCircle(px, py, r + dp(6f), stroke)
+                }
             }
             fill.color = base
             fill.alpha = alpha
@@ -236,12 +259,12 @@ class CarMapView(context: Context, attrs: AttributeSet? = null) : View(context, 
                 stroke.color = color(R.color.text1); stroke.alpha = 255; stroke.strokeWidth = dp(3f)
                 c.drawCircle(px, py, r + dp(10f), stroke)
             }
-            drawLabel(c, z, s, px, py, r, alpha)
+            drawLabel(c, z, s, px, py, r, alpha, if (hot && spot) strong else label)
         }
     }
 
     /** 구역 이름표: "공조 패널 1/5" */
-    private fun drawLabel(c: Canvas, z: Zone, s: Spot, px: Float, py: Float, r: Float, alpha: Int) {
+    private fun drawLabel(c: Canvas, z: Zone, s: Spot, px: Float, py: Float, r: Float, alpha: Int, label: Paint) {
         val text = "${z.title} ${s.learned}/${s.total}"
         val w = label.measureText(text) + dp(20f)
         val h = dp(34f)
@@ -273,4 +296,56 @@ class CarMapView(context: Context, attrs: AttributeSet? = null) : View(context, 
         return true
     }
 
+}
+
+/** 4차 소리 막대 세 개(contracts/ui.md 표). until(uptimeMillis) 전에만 움직이고, 그 뒤나 움직임 줄이기에서는 멈춘 모습이다 */
+class SoundBars(context: Context, private val until: Long) : View(context) {
+    private val bar = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.blue) }
+
+    override fun onMeasure(widthSpec: Int, heightSpec: Int) = setMeasuredDimension(dp(3 * 5f + 2 * 4f).toInt(), dp(24f).toInt())
+
+    override fun onDraw(c: Canvas) {
+        val now = SystemClock.uptimeMillis()
+        val moving = now < until && ValueAnimator.areAnimatorsEnabled()
+        val w = dp(5f)
+        for (i in 0..2) {
+            val f = if (moving) 0.3f + 0.7f * (0.5f + 0.5f * sin(2 * PI * (now / 900.0 + i / 3.0)).toFloat()) else STILL[i]
+            val h = height * f
+            val x = i * (w + dp(4f))
+            c.drawRoundRect(x, (height - h) / 2, x + w, (height + h) / 2, w / 2, w / 2, bar)
+        }
+        if (moving) postInvalidateOnAnimation() // 마지막 그림은 until 뒤라 멈춘 모습이다
+    }
+
+    private companion object { val STILL = floatArrayOf(0.4f, 0.7f, 0.5f) }
+}
+
+/** 4차 추천 기록 카드의 작은 차 그림(research R2): 그 기능 구역에 점과 링. 이름표·효과는 없다 */
+class ZoneThumb(context: Context, private val zone: Zone, private val state: RowState) : View(context) {
+    private val car = context.getDrawable(R.drawable.car_top)!!.mutate() // 큰 지도의 흐림(알파)과 나누지 않는다
+    private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+
+    init { contentDescription = "${zone.title} 위치" }
+
+    override fun onMeasure(widthSpec: Int, heightSpec: Int) = setMeasuredDimension(dp(72f).toInt(), dp(128f).toInt())
+
+    override fun onDraw(c: Canvas) {
+        val scale = minOf(width / 300f, height / 560f) // CarMapView와 같은 300×560 좌표
+        val ox = (width - 300 * scale) / 2
+        val oy = (height - 560 * scale) / 2
+        car.setBounds(ox.toInt(), oy.toInt(), (ox + 300 * scale).toInt(), (oy + 560 * scale).toInt())
+        car.draw(c)
+        val col = color(when (state) {
+            RowState.LEARNED -> R.color.green
+            RowState.MISSING -> R.color.dot_line // dot_idle은 밝은 테마에서 흰색이다
+            else -> R.color.blue
+        })
+        val px = ox + zone.x * scale
+        val py = oy + zone.y * scale
+        fill.color = col
+        c.drawCircle(px, py, dp(7f), fill)
+        ring.color = col; ring.strokeWidth = dp(2f)
+        c.drawCircle(px, py, dp(13f), ring)
+    }
 }

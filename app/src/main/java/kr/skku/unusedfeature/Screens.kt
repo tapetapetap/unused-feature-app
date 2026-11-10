@@ -223,12 +223,13 @@ fun Ui.driving(recording: Boolean): View = column(32,
 ).apply { setPadding(0, px(120), 0, 0) }
 
 /** 3. 운전 직후 안내: 왜(근거 타임라인)와 어디(누를 곳) */
-fun Ui.tip(f: Feature, reason: String, marks: List<Mark>, driveMs: Long, banner: View?, title: View = recent(driveMs)): View {
+fun Ui.tip(f: Feature, reason: String, marks: List<Mark>, driveMs: Long, banner: View?, caption: View, title: View = recent(driveMs)): View {
     val verb = if (f == Feature.DRIVE_MODE) "바꿔" else "켜"
     val parts = mutableListOf<View>()
     banner?.let(parts::add)
     parts += title
     parts += hero(tile(f.icon, Tile.BLUE), "다음엔 ${obj(f.title)}\n$verb 보세요", reason)
+    parts += caption // 4차: 들은 음성 자막
     if (marks.isNotEmpty()) {
         val points = marks.count { it.end < 0 }
         val minutes = marks.filter { it.end >= 0 }.sumOf { it.end - it.at } / MINUTE
@@ -239,6 +240,17 @@ fun Ui.tip(f: Feature, reason: String, marks: List<Mark>, driveMs: Long, banner:
     }
     parts += whereCard(f)
     return column(28, *parts.toTypedArray())
+}
+
+/**
+ * 4차 자막 카드(specs/004-visible-tips contracts/ui.md): 스피커와 소리 막대, 작은 제목과 앱이 말한 문장.
+ * until(uptimeMillis) 전에만 막대가 움직인다. 다시 보기는 0(정지)
+ */
+fun Ui.caption(f: Feature, title: String, until: Long): View = row(18,
+    row(8, icon(R.drawable.ic_speaker, c(R.color.blue), 28), SoundBars(ctx, until)),
+    column(6, text(title, 20f, R.color.text3, 600), text(f.speech, 24f, R.color.text1)), grow = 1).apply {
+    background = round(c(R.color.card), 18f, c(R.color.line))
+    setPadding(px(24), px(18), px(24), px(18))
 }
 
 /** 누를 곳 카드: 버튼 줄 + 자리·언제 + 각주 */
@@ -319,7 +331,7 @@ fun Ui.complete(features: List<Feature>, learnedAt: (Feature) -> Long, firstDriv
 }
 
 /** 8. 추천 기록 목록(003): 날짜별, 최신이 위. 항목을 누르면 [onOpen](그 번호) */
-fun Ui.history(records: List<Record>, learned: Set<Feature>, onOpen: (Int) -> Unit, onClose: () -> Unit): View {
+fun Ui.history(records: List<Record>, learned: Set<Feature>, unsupported: Set<Feature>, onOpen: (Int) -> Unit, onClose: () -> Unit): View {
     val close = chip("✕  닫기", R.color.text2, R.color.chip).apply { setOnClickListener { onClose() } }
     val head = row(20, column(6, small("지난 안내"), headline("추천 기록", 44f)), close, grow = 0)
     if (records.isEmpty()) return column(28, head, hero(tile(R.drawable.ic_clock, Tile.GREY),
@@ -334,8 +346,10 @@ fun Ui.history(records: List<Record>, learned: Set<Feature>, onOpen: (Int) -> Un
             text(timeOfDay(r.at), 22f, R.color.text3),
             chip("써 봄 ✓", R.color.green_text, R.color.green_soft).takeIf { used },
         )
+        // 4차 미니 지도: 익힘 > 이 차에 없음 > 아직(카드의 타일·"써 봄 ✓"과 같은 규칙)
+        val state = if (used) RowState.LEARNED else if (r.pick in unsupported) RowState.MISSING else RowState.NOT_YET
         parts += card(row(24, tile(r.pick.icon, if (used) Tile.GREEN else Tile.BLUE, 96),
-            column(8, row(12, *top.toTypedArray()), body(r.reason, 24f)), grow = 1))
+            column(8, row(12, *top.toTypedArray()), body(r.reason, 24f)), ZoneThumb(ctx, r.pick.zone, state), grow = 1))
             .apply { setOnClickListener { onOpen(i) } }
     }
     return column(20, *parts.toTypedArray())
