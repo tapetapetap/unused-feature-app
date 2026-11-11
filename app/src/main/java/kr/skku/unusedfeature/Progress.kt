@@ -22,10 +22,13 @@ class Progress(context: Context) {
         }.apply()
     }
 
+    /** 5차: 주행 중 권함도 안내 횟수에 센다(추천 기록·운전 수는 건드리지 않음) */
+    fun countShown(f: Feature) = p.edit().putInt("shown_${f.name}", p.getInt("shown_${f.name}", 0) + 1).apply()
+
+    /** 운전 끝 결과를 남긴다. 안내 횟수는 부르는 쪽이 [countShown]으로 올린다(5차: 주행 중에 이미 센 기능은 다시 세지 않는다) */
     fun record(o: Outcome) {
         p.edit().apply {
             o.pick?.let {
-                putInt("shown_${it.name}", p.getInt("shown_${it.name}", 0) + 1)
                 val r = Record(System.currentTimeMillis(), it, o.reason, o.driveMillis, o.marks)
                 putString("history", History.append(p.getString("history", null), r))
             }

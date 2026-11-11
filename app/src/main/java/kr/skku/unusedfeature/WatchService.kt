@@ -51,6 +51,10 @@ class WatchService : Service() {
         /** 화면이 열려 있을 때만 설정된다 */
         var onUpdate: (() -> Unit)? = null
 
+        /** 5차: 이번 운전에서 주행 중에 권한 기능(마지막이 주행 중 카드). 다음 운전이 시작될 때 비운다 */
+        @Volatile var tips: List<LiveTip> = emptyList()
+            private set
+
         /** 4차: 앱이 마지막으로 말한 안내(자막·소리 막대, specs/004-visible-tips data-model Spoken) */
         @Volatile var lastSpoken: Spoken? = null
             private set
@@ -76,7 +80,7 @@ class WatchService : Service() {
         nm.createNotificationChannel(NotificationChannel(CH_TIP, "안 써본 기능 안내", NotificationManager.IMPORTANCE_HIGH))
         ServiceCompat.startForeground(
             this, ID_WATCH,
-            notification(CH_WATCH, "운전을 지켜보는 중", "운전이 끝나면 놓친 기능 하나를 알려 드려요.", ongoing = true),
+            notification(CH_WATCH, "운전을 지켜보는 중", "쓸 만한 기능이 보이면 운전 중엔 짧게, 끝나면 자세히 알려 드려요.", ongoing = true),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
         )
         startTts()
@@ -89,7 +93,7 @@ class WatchService : Service() {
     override fun onDestroy() {
         if (::watcher.isInitialized) watcher.stop()
         runCatching { tts?.release() }
-        driving = false; recording = false
+        driving = false; recording = false; tips = emptyList()
         onUpdate?.invoke()
         super.onDestroy()
     }
@@ -98,8 +102,9 @@ class WatchService : Service() {
     private fun onChange() {
         var changed = problems.remove(NO_SIGNAL) // 신호가 들어온다 = 재시도로 연결됨
         val tracker = watcher.tracker
-        if (driving != watcher.notParked || recording != tracker.driving) {
-            driving = watcher.notParked; recording = tracker.driving; changed = true
+        if (driving != watcher.restricted || recording != tracker.driving) {
+            if (!recording && tracker.driving) tips = emptyList() // 5차: 새 운전
+            driving = watcher.restricted; recording = tracker.driving; changed = true
         }
         val newly = tracker.usedNow() - progress.learned()
         if (newly.isNotEmpty()) {
@@ -107,6 +112,18 @@ class WatchService : Service() {
                 ?: if (watcher.notParked) "운전 중" else "정차 중" // 기록하지 않는 운전(운전 도중 시작)은 몇 분 뒤인지 모른다
             progress.learn(newly, note)
             changed = true
+        }
+        // 5차: 주행 중 권함. 익힘 저장 뒤에 판단해 방금 쓴 기능은 권하지 않는다(specs/005-live-tips data-model §3)
+        val busy = tracker.signalOn || watcher.reverse
+        if (tracker.driving && tips.size < LiveCoach.MAX_TIPS && !busy) { // 저장소를 읽기 전에 거른다
+            val at = tracker.elapsed()
+            LiveCoach.next(tracker.stats, at, tips, progress.shown(), progress.learned(), unsupported, busy)?.let { f ->
+                tips = tips + LiveTip(f, at)
+                progress.countShown(f)
+                val said = speak(f.live!!)
+                Log.i(TAG, "주행 중 권함 ${f.name} (앱 시계 ${at / 1000}초, 말함 $said)")
+                changed = true
+            }
         }
         if (changed) onUpdate?.invoke()
     }
@@ -116,9 +133,13 @@ class WatchService : Service() {
         val learnedNow = progress.learned()
         val outcome = Coach.finish(stats, progress.shown(), learnedAtLastEnd, learnedNow, unsupported)
         if (outcome != null) {
+            // 5차: 이번 운전 중에 이미 권한 기능이면 화면만 보이고 말하지 않으며 횟수도 다시 세지 않는다(data-model §5)
+            val tipped = outcome.pick != null && tips.any { it.feature == outcome.pick }
             progress.record(outcome)
+            if (!tipped) outcome.pick?.let(progress::countShown)
             learnedAtLastEnd = learnedNow
-            outcome.pick?.let {
+            if (tipped) lastSpoken = null // 지난 P에 같은 기능을 말한 자막이 붙지 않게
+            outcome.pick?.takeUnless { tipped }?.let {
                 lastSpoken = Spoken(it, SystemClock.uptimeMillis(), speak(it.speech))
                 getSystemService(NotificationManager::class.java)
                     .notify(ID_TIP, notification(CH_TIP, "안 써본 기능: ${it.title}", it.speech, ongoing = false))

@@ -25,11 +25,12 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
-        <!-- 정차 중에만 보는 화면이라 DO(주의분산 최적화)를 선언하지 않는다 -->
+        <!-- 5차: 주행 중에는 움직이지 않고 누를 것 없는 권함 카드만 보이므로 주행 최적화(DO)를 선언한다(specs/005-live-tips contracts §5) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask">
+            <meta-data android:name="distractionOptimized" android:value="true" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -42,7 +43,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Watches vehicle signals during a drive to suggest one unused car feature when parked" />
+                android:value="Watches vehicle signals during a drive to suggest unused car features briefly while driving and in detail when parked" />
         </service>
 
         <receiver android:name=".BootReceiver" android:exported="true">

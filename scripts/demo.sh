@@ -13,6 +13,8 @@
 #   demo.sh multi     조수석·온도·시트 열선·전조등 → 여러 번 하면 하나씩 다른 안내
 #   demo.sh reset     앱 기록 지우기(처음 설치 상태)
 #   demo.sh seed      4차: 디버그 빌드에 시연 샘플 상태(사흘 전~어제 추천 기록 6개, 익힘 2개, 운전 6번). 첫 화면은 앰비언트 안내
+#   demo.sh live      5차: 내비 옆 칸에서 주행 중 권함 두 번(오토 와이퍼 → 써 봤어요 → 방향지시등 동안 미룸 → 시트 열선) → P
+#                     SHOT_DIR=<폴더>를 주면 live-tip1·live-tried·live-tip2·live-park.png를 찍는다
 VC=http://127.0.0.1:8088
 ADB=${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb
 
@@ -28,6 +30,8 @@ park() { put gear gear=Park; say "■ P (화면: 안내 · 음성)"; }
 wait_min() { say "  … 앱 시간 $1분 ($(($1 * 6))초)"; sleep $(($1 * 6 + 1)); }
 
 sleep 2
+# 5차: 하트비트 직후에는 콘솔 공조가 아직 차로 값을 보내지 못한다(publisher_ready false). 준비될 때까지(최대 10초) 기다린다
+i=0; while [ $i -lt 10 ] && ! curl -s -m 2 "$VC/vehicle/state" | grep -q '"publisher_ready": *{[^}]*"any": *true'; do sleep 1; i=$((i + 1)); done
 put gear gear=Park
 if [ "$1" = reset ] || [ "$1" = seed ]; then
   # 차를 "아무 기능도 안 쓰는" 상태로 되돌린 뒤 앱 기록을 지운다. 켜진 기능이 남아 있으면 앱이 바로 "익힘"으로 기록한다
@@ -59,7 +63,25 @@ if [ "$1" = reset ] || [ "$1" = seed ]; then
   if [ "$1" = seed ]; then say "샘플 상태를 넣었어요. 화면: 앰비언트 라이트 안내, 추천 기록 6개"; else say "차 상태와 앱 기록을 처음으로 되돌렸어요. 화면: 첫 실행"; fi
   exit 0
 fi
+shot() { [ -n "$SHOT_DIR" ] && mkdir -p "$SHOT_DIR" && $ADB exec-out screencap -p > "$SHOT_DIR/$1" && say "  캡처 $1"; }
 case "$1" in
+  live) # 5차 specs/005-live-tips contracts §6. 앱 시계 1분 = 실제 6초
+    put hvac power=true; put hvac auto=false; put hvac driver_seat=0; put hvac driver_temp=24; put body front_wiper=Off
+    put turn-signal mode=Off
+    # 착좌는 앱에 콘솔 값의 반대로 온다(콘솔 false → 앉음). reset이 false로 두므로 true로 바꿔 조수석을 비운다(동승석 기회가 끼지 않게)
+    put seat "kind=occupied&area=passenger&value=true"
+    $ADB shell am start --user 10 -n kr.skku.unusedfeature/.MainActivity >/dev/null; sleep 3
+    $ADB shell input swipe 2547 720 1500 720 800; sleep 3 # 창 손잡이를 끌어 1:1 분할(왼쪽 앱, 오른쪽 내비, research R2)
+    say "  내비 옆 칸에 앱"
+    drive
+    put body front_wiper=Low 4; put body front_wiper=High 4; put body front_wiper=Low 4
+    say "  와이퍼를 손으로 세 번 → 10초 안에 '오토 와이퍼' 권함"; sleep 10; shot live-tip1.png
+    put body front_wiper=Auto 5; shot live-tried.png
+    put body front_wiper=Off # 비가 그친다(AUTO에서도 와이퍼가 돌면 비로 센다. 비 5분이 차면 뒷유리·미러 열선이 먼저 뽑힌다)
+    put turn-signal mode=BlinkLeft; put hvac driver_temp=26; say "  방향지시등 켬 + 난방 26° → 켠 동안은 권하지 않음"; wait_min 5
+    put turn-signal mode=Off 5; shot live-tip2.png
+    park; sleep 4; shot live-park.png
+    exit 0 ;;
   learn)
     put hvac power=true; put hvac auto=false; drive
     put hvac auto=true; say "  AUTO 켬 (화면 아래 공조 막대에 AUTO)"; wait_min 1 ;;

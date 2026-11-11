@@ -3,6 +3,7 @@ package kr.skku.unusedfeature
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
@@ -22,6 +23,7 @@ class MainActivity : Activity() {
     private var openHistory: Int? = null // 추천 기록(003): null 닫힘, -1 목록, n 다시 보기
     private var listY = 0 // 다시 보기로 가기 전 목록의 스크롤 위치
     private var shown: State? = null
+    private var drivingKey: String? = null // 5차: 주행 중 화면은 이 값이 바뀔 때만 다시 그린다(contracts §2)
     private var drivesSeen = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,7 +105,14 @@ class MainActivity : Activity() {
             confirmed != null -> State.CONFIRM
             else -> State.NONE
         }
-        if (state == State.DRIVING && shown == State.DRIVING) return // 주행 중에는 화면을 바꾸지 않는다(FR-010)
+        // 5차: 주행 중에는 권함 상태(기록 여부, 마지막 권함, 써 봤는지)가 바뀔 때만 다시 그린다(4차 FR-010의 뜻을 잇는다)
+        val live = WatchService.tips.lastOrNull()?.feature?.let { it to (it in learned) }
+        val key = "${WatchService.recording} $live ${WatchService.problems} ${WatchService.unsupported.size}"
+        if (state == State.DRIVING && shown == State.DRIVING && key == drivingKey) return
+        drivingKey = key
+        // 5차: 내비 옆 작은 칸(세로 배치)에서는 주행 중 지도 칸을 숨겨 카드가 창 높이를 다 쓴다(research R8)
+        val portrait = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+        findViewById<View>(R.id.mapPane).visibility = if (portrait && state == State.DRIVING) View.GONE else View.VISIBLE
         val prev = shown
         shown = state
 
@@ -112,7 +121,7 @@ class MainActivity : Activity() {
         WatchService.problems.forEach { screen.addView(ui.banner(it), lp(bottom = 28)) }
         val driveMs = progress.lastDriveMillis()
         screen.addView(when (state) {
-            State.DRIVING -> ui.driving(WatchService.recording)
+            State.DRIVING -> ui.driving(WatchService.recording, live, portrait)
             State.RECORD -> recordScreen(record!!, learned)
             State.HISTORY -> ui.history(records, learned, WatchService.unsupported.toSet(),
                 onOpen = { listY = findViewById<ScrollView>(R.id.scroll).scrollY; openHistory = it; render() },

@@ -43,6 +43,9 @@ private class Span(private val kind: Kind?, private val text: String) {
 
     fun reset(on: Boolean) { total = 0; since = if (on) 0 else -1 }
 
+    /** 5차: 진행 중인 구간까지 더한 누적(운전 중 권함 판단용) */
+    fun totalAt(t: Long) = total + if (since >= 0) t - since else 0
+
     fun set(on: Boolean, t: Long, marks: MutableList<Mark>) {
         if (on && since < 0) since = t
         if (!on && since >= 0) {
@@ -64,7 +67,20 @@ class Tracker(private val clock: () -> Long) {
     private var start = -1L // -1 = 지켜보는 운전 없음
     val driving get() = start >= 0
     fun minutesIntoDrive(): Long? = if (driving) (clock() - start) / MINUTE else null
-    private fun t() = clock() - start
+    /** 운전 경과 ms(앱 시계). 운전 중에만 쓴다(5차: 주행 중 권함도 쓴다) */
+    fun elapsed() = clock() - start
+
+    /** 5차: 마지막 방향지시등 상태. 운전 기록에는 넣지 않고 주행 중 권함을 미루는 데만 쓴다 */
+    var signalOn = false
+
+    /** 5차: 운전 중 누적값(비, 비 + 내기, 운전 시간)을 지금까지 값으로 쓴다. endDrive가 최종값을 다시 쓴다(research R4) */
+    fun tick() {
+        if (!driving) return
+        val now = elapsed()
+        stats.rainMillis = rain.totalAt(now)
+        stats.rainRecircMillis = rainRecirc.totalAt(now)
+        stats.driveMillis = now
+    }
 
     private var auto: Boolean? = null
     private var dual: Boolean? = null
@@ -120,7 +136,8 @@ class Tracker(private val clock: () -> Long) {
     }
 
     fun endDrive(): DriveStats = stats.also {
-        val end = t()
+        signalOn = false // 5차: 방향지시등 값이 멈춰 다음 운전까지 권함을 막지 않게
+        val end = elapsed()
         it.driveMillis = end
         rain.set(false, end, it.marks); rainRecirc.set(false, end, it.marks); night.set(false, end, it.marks)
         it.rainMillis = rain.total; it.rainRecircMillis = rainRecirc.total; it.nightMillis = night.total
@@ -130,14 +147,14 @@ class Tracker(private val clock: () -> Long) {
     }
 
     private fun mark(kind: Kind, text: String) {
-        if (driving) stats.marks += Mark(kind, t(), -1, text)
+        if (driving) stats.marks += Mark(kind, elapsed(), -1, text)
     }
 
     private fun raining() = wiperOn == true || wiperMode in setOf("미스트", "INT", "LO", "HI")
 
     private fun spans() {
         if (!driving) return
-        val now = t()
+        val now = elapsed()
         rain.set(raining(), now, stats.marks)
         rainRecirc.set(raining() && recirc == true, now, stats.marks)
         night.set(lightOn == true, now, stats.marks)
@@ -252,7 +269,7 @@ class Tracker(private val clock: () -> Long) {
     fun distance(value: Float) {
         km = value; refresh()
         if (!driving) return
-        val now = t()
+        val now = elapsed()
         val prev = samples.lastOrNull()
         if (prev != null) {
             val base = samples.lastOrNull { it.first <= now - MINUTE }
@@ -308,6 +325,26 @@ class Tracker(private val clock: () -> Long) {
     }
 }
 
+/** 5차: 이번 운전에서 주행 중에 권한 기능과 그때의 운전 경과 ms */
+data class LiveTip(val feature: Feature, val at: Long)
+
+/** 5차: 주행 중 권함 고르기(specs/005-live-tips data-model §3). "기록하는 운전"인지는 부르는 쪽이 지킨다 */
+object LiveCoach {
+    const val MAX_TIPS = 2
+    const val GAP = 5 * MINUTE
+    const val FIRST = MINUTE // 출발 직후(후진으로 빠져나오는 동안 등)에는 권하지 않는다
+
+    /** [busy]: 방향지시등이 켜졌거나 기어가 R이면 미룬다 */
+    fun next(s: DriveStats, now: Long, tips: List<LiveTip>, shown: Map<Feature, Int>,
+             learned: Set<Feature>, unsupported: Set<Feature>, busy: Boolean): Feature? {
+        if (tips.size >= MAX_TIPS || busy || now < FIRST) return null
+        if (tips.isNotEmpty() && now - tips.last().at < GAP) return null
+        return Coach.candidates(s, shown, learned, unsupported)
+            .filter { f -> f.live != null && tips.none { it.feature == f } }
+            .minByOrNull { shown[it] ?: 0 } // 같으면 표 순서(Coach.finish와 같다)
+    }
+}
+
 /** 운전 끝 판단 결과. [pick] 안내할 기능, [confirmed] 안내했던 기능 중 지난 운전 끝 이후 익힌 것 */
 data class Outcome(
     val pick: Feature?,
@@ -327,15 +364,17 @@ object Coach {
      * [unsupported]: 그 차에 없다고 확인된 기능(data-model "지원 기능"). 신호가 와도 권하지 않는다.
      * 1분 미만 운전이면 null.
      */
+    /** 권할 수 있는 기능(기회 있음, 안 씀, 안 익힘, 신호 받음, 이 차에 있음, 안내 3번 미만). P 안내와 주행 중 권함이 같이 쓴다 */
+    fun candidates(s: DriveStats, shown: Map<Feature, Int>, learned: Set<Feature>, unsupported: Set<Feature>) =
+        Feature.entries.filter { it in s.heard && it !in unsupported && it.opportunity(s) && it !in s.used && it !in learned && (shown[it] ?: 0) < MAX_SHOWN }
+
     fun finish(
         s: DriveStats, shown: Map<Feature, Int>, learnedBefore: Set<Feature>, learnedNow: Set<Feature>,
         unsupported: Set<Feature> = emptySet(),
     ): Outcome? {
         if (s.driveMillis < MINUTE) return null
         val count = { f: Feature -> shown[f] ?: 0 }
-        val pick = Feature.entries
-            .filter { it in s.heard && it !in unsupported && it.opportunity(s) && it !in s.used && it !in learnedNow && count(it) < MAX_SHOWN }
-            .minByOrNull(count) // 같으면 먼저 나온 것 = 표 순서
+        val pick = candidates(s, shown, learnedNow, unsupported).minByOrNull(count) // 같으면 먼저 나온 것 = 표 순서
         val confirmed = Feature.entries.firstOrNull { it in learnedNow && it !in learnedBefore && count(it) > 0 }
         return Outcome(
             pick, confirmed,

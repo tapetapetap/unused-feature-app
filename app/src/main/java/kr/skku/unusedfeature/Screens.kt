@@ -159,12 +159,12 @@ class Ui(val ctx: Context) {
         })
     }
 
-    /** 누를 곳: 어두운 버튼 줄에서 해당 버튼만 파랗게 깜빡인다 */
-    fun where(w: Where): View {
+    /** 누를 곳: 어두운 버튼 줄에서 해당 버튼만 파랗게 깜빡인다. 5차: 주행 중에는 [blink] = false(움직임 없음) */
+    fun where(w: Where, blink: Boolean = true): View {
         val buttons = w.buttons.mapIndexed { i, b ->
             val hot = i == w.hi
             text(b, if (hot) 22f else 19f, if (hot) R.color.on_accent else R.color.panel_text, if (hot) 700 else 400).apply {
-                if (hot) pulse(this)
+                if (hot && blink) pulse(this)
                 background = if (hot) round(c(R.color.blue), 12f) else round(c(R.color.panel), 12f, c(R.color.panel_line))
                 setPadding(px(18), px(12), px(18), px(12))
             }
@@ -205,22 +205,37 @@ fun Ui.firstRun(): View {
     return column(28,
         small("안 써본 기능"),
         hero(tile(R.drawable.ic_spark, Tile.VIOLET), "운전을 마치면\n놓친 기능 하나를\n알려 드려요", null),
-        step(1, R.color.blue, "평소처럼 운전하세요", "주행 중에는 말하지 않고 지켜보기만 해요"),
+        step(1, R.color.blue, "평소처럼 운전하세요", "주행 중에는 꼭 필요할 때만 짧게 알려요"),
         step(2, R.color.blue, "P에 놓으면 딱 한 가지", "이번 운전에서 쓸 만했던 기능을 음성과 화면으로"),
         step(3, R.color.green, "써 보면 지도에 초록불", "익힌 기능은 다시 알려 드리지 않아요"),
     )
 }
 
 /** 2. 주행 중: 고정 문구만 (원칙 I) */
-fun Ui.driving(recording: Boolean): View = column(32,
-    row(0, tile(R.drawable.ic_z_wheel, Tile.SOFT, 150)),
-    headline("운전 중이에요", 60f),
-    body(if (recording) "차를 세우고 P에 놓으면 알려 드릴게요." else "이번 운전은 기록하지 않아요. 다음 운전부터 지켜볼게요.", 30f),
-    row(14, dot(R.color.green, 14), text("주행 중에는 말하지도, 화면을 바꾸지도 않아요", 22f, R.color.text3)).apply {
-        background = round(c(R.color.card), 18f, c(R.color.line))
-        setPadding(px(24), px(18), px(28), px(18))
-    }.let { row(0, it) },
-).apply { setPadding(0, px(120), 0, 0) }
+/**
+ * 2. 주행 중(5차 contracts/ui.md §1): 기다림 / 권함 / 써 봤어요. 움직이는 효과와 누를 것이 없다.
+ * [live]는 이번 운전의 마지막 권함과 그 뒤에 썼는지, [compact]는 내비 옆 작은 칸(세로 배치)
+ */
+fun Ui.driving(recording: Boolean, live: Pair<Feature, Boolean>?, compact: Boolean): View {
+    val size = if (compact) 120 else 150
+    val parts = when {
+        live == null -> listOf(
+            row(0, tile(R.drawable.ic_z_wheel, Tile.SOFT, size)),
+            headline("운전 중이에요", 60f),
+            body(if (recording) "쓸 만한 기능이 생기면 한 번 알려 드릴게요." else "이번 운전은 기록하지 않아요. 다음 운전부터 지켜볼게요.", 30f),
+            row(14, dot(R.color.green, 14), text("주행 중에는 한 운전에 두 번까지만, 짧게 알려요", 22f, R.color.text3)).apply {
+                background = round(c(R.color.card), 18f, c(R.color.line))
+                setPadding(px(24), px(18), px(28), px(18))
+            }.let { row(0, it) },
+        )
+        live.second -> listOf(row(0, tile(live.first.icon, Tile.GREEN, size, badge = true)), headline("써 봤어요", 60f), body(live.first.title, 30f))
+        else -> live.first.let { f ->
+            listOf(small("지금 쓸 만한 기능"), row(0, tile(f.icon, Tile.BLUE, size)), headline(f.title, 60f), body(f.live.orEmpty(), 30f),
+                text(f.where.place, 24f, R.color.text1, 600), row(0, where(f.where, blink = false)))
+        }
+    }
+    return column(32, *parts.toTypedArray()).apply { setPadding(0, px(if (compact) 40 else 120), 0, 0) }
+}
 
 /** 3. 운전 직후 안내: 왜(근거 타임라인)와 어디(누를 곳) */
 fun Ui.tip(f: Feature, reason: String, marks: List<Mark>, driveMs: Long, banner: View?, caption: View, title: View = recent(driveMs)): View {
@@ -307,7 +322,7 @@ fun Ui.none(driveMs: Long, used: List<Feature>, remaining: List<Feature>): View 
         card(cardTitle("이번 운전에서 쓴 기능"),
             if (used.isEmpty()) body("없어요", 24f) else grid(3, used.map { chip(it.title, R.color.green_text, R.color.green_soft, it.icon) })),
         card(cardTitle("아직 남은 기능 ${remaining.size}개"), grid(3, left),
-            text("쓸 만한 순간이 오면 그 운전이 끝날 때 알려 드릴게요.", 22f, R.color.text3)),
+            text("쓸 만한 순간이 오면 운전 중엔 짧게, 끝나면 자세히 알려 드릴게요.", 22f, R.color.text3)),
     )
 }
 

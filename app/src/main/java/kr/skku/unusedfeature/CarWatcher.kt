@@ -6,6 +6,7 @@ import ai.pleos.playground.vehicle.api.model.area.SeatArea
 import ai.pleos.playground.vehicle.api.model.area.WindowArea
 import ai.pleos.playground.vehicle.api.model.capability.AreaBounds
 import ai.pleos.playground.vehicle.constant.area.SeatValue
+import ai.pleos.playground.vehicle.constant.area.TurnSignalValue
 import ai.pleos.playground.vehicle.constant.area.WindowValue
 import ai.pleos.playground.vehicle.constant.control.CruiseControl
 import ai.pleos.playground.vehicle.constant.control.DrivingModeType
@@ -32,6 +33,7 @@ import ai.pleos.playground.vehicle.listener.HvacSteeringWheelHeatStateListener
 import ai.pleos.playground.vehicle.listener.HvacTemperatureListener
 import ai.pleos.playground.vehicle.listener.LightStateListener
 import ai.pleos.playground.vehicle.listener.SeatOccupancyListener
+import ai.pleos.playground.vehicle.listener.TurnSignalStateListener
 import ai.pleos.playground.vehicle.listener.WiperStateListener
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -92,6 +94,12 @@ class CarWatcher(
 
     /** 기어가 P가 아님. 기록하지 않는 운전(운전 도중 시작)도 포함한다. 첫 기어 값 전에는 false */
     val notParked get() = lastGear != null && lastGear != VehicleGear.GEAR_PARK
+
+    /** 5차: 화면용. 기어 값을 아직 모르면(연결 전·실패) 주행 중으로 본다. 주행 최적화 앱이라 Pleos가 대신 가려 주지 않는다 */
+    val restricted get() = lastGear != VehicleGear.GEAR_PARK
+
+    /** 5차: 후진 중에는 주행 중 권함을 미룬다 */
+    val reverse get() = lastGear == VehicleGear.GEAR_REVERSE
     private var frontWiper: WindowArea? = null
     private val rearSeated = mutableMapOf<SeatValue, Boolean>() // 뒷좌석 자리별 값. 하나라도 앉았으면 앉은 것
     private val rearHeat = mutableMapOf<SeatValue, Int>()
@@ -101,6 +109,8 @@ class CarWatcher(
         override fun run() {
             if (stopped || !tracker.driving) return
             readSwitches()
+            tracker.tick() // 5차: 비·운전 시간을 지금까지 값으로 두고 주행 중 권함을 판단한다(research R4·R5)
+            onChange()
             main.postDelayed(this, POLL_MILLIS)
         }
     }
@@ -119,6 +129,7 @@ class CarWatcher(
         for ((what, watch) in listOf(
             "기어" to ::watchGear, "공조" to ::watchClimate, "시트" to ::watchSeats, "운전대" to ::watchWheel,
             "조명" to ::watchLights, "주행" to ::watchDriving, "와이퍼" to ::watchWipers, "미러" to ::watchMirror,
+            "방향지시등" to ::watchTurnSignal,
         )) try { watch() } catch (e: Exception) { Log.w(TAG, "$what 구독 실패", e) }
         // 계기판 표시등(오토 홀드·LFA·i-PEDAL)은 읽기에도 내부 전용 권한(PRIVATE_CAR_SAFETY)이 필요해 쓰지 않는다
         main.postDelayed({ Log.i(TAG, "신호 받은 기능: ${tracker.stats.heard.sorted()}") }, 3_000)
@@ -463,6 +474,21 @@ class CarWatcher(
     private fun readWiperSwitch() {
         val a = frontWiper ?: return
         vehicle.getWiper().getCurrentWiperSwitch(a, { s -> s?.let { update { wiperSwitch(wiperLabel(it)) } } }, transient("와이퍼 스위치"))
+    }
+
+    /** 5차: 켜진 동안 주행 중 권함을 미룬다. 못 받으면 미루기 조건 없이 판단한다(research R3) */
+    private fun watchTurnSignal() {
+        val signal = vehicle.getTurnSignal()
+        val l = object : TurnSignalStateListener {
+            override fun onTurnSignalStateUpdated(v: TurnSignalValue?) {
+                v ?: return
+                Log.i(TAG, "방향지시등 $v")
+                update { signalOn = v != TurnSignalValue.OFF }
+            }
+            override fun onFailed(e: Exception) = transient("방향지시등")(e)
+        }
+        signal.registerTurnSignalState(l)
+        unregisters += { signal.unregisterTurnSignalState(l) }
     }
 
     private fun watchMirror() {
