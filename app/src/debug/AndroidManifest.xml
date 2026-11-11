@@ -2,9 +2,17 @@
 <!-- 디버그 빌드 전용(4차 specs/004-visible-tips research R4). 출시 빌드에는 없다.
      DUMP 권한은 adb shell만 가지므로 일반 앱은 이 수신기를 부를 수 없다 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- MirrorReceiver가 사이드미러 열선을 쓰려면 제어 권한이 필요하다. 디버그 빌드에만 선언한다(출시 앱은 읽기만 한다) -->
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_MIRRORS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_CLIMATE" />
     <application>
         <receiver
             android:name=".SeedReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
+        <!-- 시연 준비: 콜드 부팅 뒤 비어 있는 사이드미러 열선 값을 한 번 켰다 끈다(scripts/demo.sh reset) -->
+        <receiver
+            android:name=".MirrorReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
     </application>

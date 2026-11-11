@@ -32,9 +32,11 @@ put gear gear=Park
 if [ "$1" = reset ] || [ "$1" = seed ]; then
   # 차를 "아무 기능도 안 쓰는" 상태로 되돌린 뒤 앱 기록을 지운다. 켜진 기능이 남아 있으면 앱이 바로 "익힘"으로 기록한다
   # 콜드 부팅 뒤 콘솔은 한 번도 바꾸지 않은 값을 차에 보내지 않는다. 그러면 앱은 그 기능을 "신호 없음"으로 빼므로
-  # 한 번 켰다가 아래에서 끈다(시트 열선·운전대 열선·DUAL. 사이드미러 열선·오토 내/외기는 콘솔에 없다). 기록은 아래에서 지운다
+  # 한 번 켰다가 아래에서 끈다(시트 열선·운전대 열선·DUAL. 오토 내/외기는 콘솔에 없다). 기록은 아래에서 지운다
   for q in "hvac driver_seat=1" "steering-wheel-heat level=1" "hvac dual=true"; do quiet ${q% *} "${q#* }"; done
-  sleep 1
+  # 사이드미러 열선은 콘솔에 없어, 디버그 빌드의 수신기(DUMP 권한, adb shell만)가 SDK로 한 번 켰다 끈다
+  $ADB shell am broadcast --user 10 --include-stopped-packages -n kr.skku.unusedfeature/.MirrorReceiver >/dev/null 2>&1
+  sleep 2
   for q in "hvac power=true" "hvac auto=false" "hvac dual=false" "hvac ac=false" "hvac recirc=false" "hvac front_defroster=false" \
            "hvac rear_defroster=false" "hvac driver_seat=0" "hvac passenger_seat=0" "hvac driver_temp=24" "hvac fan_speed=1" \
            "steering-wheel-heat level=0" "driving-mode ad_mode_state=ready" "body front_wiper=Off" "body ambient_mode=Off" \
