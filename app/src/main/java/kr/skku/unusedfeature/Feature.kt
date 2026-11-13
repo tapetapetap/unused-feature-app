@@ -132,7 +132,7 @@ enum class Feature(
     FRONT_DEFROST(
         "앞유리 김서림 제거", Zone.WINDSHIELD, R.drawable.ic_f_front_defrost,
         "비 오는 날 내기 순환을 오래 켜 두셨어요. 앞유리에 김이 서리면 앞유리 김서림 제거 버튼을 눌러 보세요.",
-        "비와 내기 순환이 겹친 구간", "비 오는 날이나 추운 아침에 앞유리가 뿌옇게 될 때.",
+        "비 온 구간과 내기 순환", "비 오는 날이나 추운 아침에 앞유리가 뿌옇게 될 때.",
         Where("공조 패널", "*앞유리 김서림", "뒷유리 열선", "A/C"), setOf(Kind.RAIN, Kind.RECIRC),
         { "비가 오는 동안 내기 순환을 ${it.rainRecircMillis / MINUTE}분 켜 두셨어요." }, { it.rainRecircMillis >= 5 * MINUTE },
         live = "비 오는 동안 내기 순환이 길었어요. 김이 서리면 김서림을 누르세요.",

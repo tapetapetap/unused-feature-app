@@ -13,6 +13,16 @@ class CoachTest {
 
     private var now = 0L
 
+    /** 6차 근거 카드 오른쪽 숫자(contracts §4): 순간만 n번, 구간만 합친 분, 섞이면 없음 */
+    @Test fun evidenceCountRules() {
+        val point = { at: Long -> Mark(Kind.FAN, at * MINUTE, -1, "풍량") }
+        val span = { from: Long, to: Long -> Mark(Kind.RAIN, from * MINUTE, to * MINUTE, "와이퍼") }
+        assertEquals("2번", evidenceCount(listOf(point(1), point(2)), AUTO_CLIMATE.evidence))
+        assertEquals("8분", evidenceCount(listOf(span(0, 3), span(5, 10)), REAR_DEFROST.evidence))
+        assertEquals("", evidenceCount(listOf(span(3, 15), point(4)), FRONT_DEFROST.evidence)) // 앞유리 김서림: 비 구간 + 내기 순환 켬
+        assertEquals("", evidenceCount(listOf(span(3, 15)), FRONT_DEFROST.evidence)) // 내기 순환이 처음부터 켜져 표시가 없어도(코드 리뷰)
+    }
+
     /** 가짜 시계를 [ms]만큼 흘린다 */
     private fun Tracker.wait(ms: Long) { now += ms }
 
@@ -240,6 +250,7 @@ class CoachTest {
     @Test fun recirculationToggles() {
         val s = drive { recirc(true); recirc(false) }
         assertEquals(2, s.recircToggles)
+        assertEquals(listOf("내기 순환 켬", "외기로 바꿈"), s.marks.filter { it.kind == Kind.RECIRC }.map { it.text }) // 6차 표시 글자
         assertTrue(AUTO_RECIRC.opportunity(s))
         assertEquals(0, drive { autoRecirc(true); recirc(true); recirc(false) }.recircToggles)
         assertTrue(AUTO_RECIRC in drive { autoRecirc(true) }.used)

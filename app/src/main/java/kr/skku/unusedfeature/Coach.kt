@@ -6,6 +6,22 @@ private const val HIGHWAY_KMH = 70.0
 /** 근거 하나. [at]·[end]는 운전 시작부터의 ms, 순간이면 [end] = -1 */
 data class Mark(val kind: Kind, val at: Long, val end: Long, val text: String)
 
+/** 구간 표시(막대)를 남기는 종류. 나머지는 순간 표시다(Tracker의 Span·highway) */
+private val SPAN_KINDS = setOf(Kind.RAIN, Kind.NIGHT, Kind.HIGHWAY, Kind.DRIVE)
+
+/**
+ * 6차 근거 카드 오른쪽 숫자: 순간만이면 "n번", 구간만이면 합친 분. 근거 종류가 구간과 순간을 섞는 기능(앞유리 김서림의
+ * 비 + 내기 순환)은 숫자 없음. 그 이유 문장의 분(겹친 시간)은 기록에 없는 값이라 표시들로 셀 수 없다(코드 리뷰 반영)
+ */
+fun evidenceCount(marks: List<Mark>, kinds: Set<Kind>): String {
+    val points = marks.count { it.end < 0 }
+    return when {
+        kinds.any { it in SPAN_KINDS } && kinds.any { it !in SPAN_KINDS } -> ""
+        points > 0 -> "${points}번"
+        else -> "${marks.sumOf { it.end - it.at } / MINUTE}분"
+    }
+}
+
 /** 한 번의 운전 동안 센 값. 메모리에만 둔다. */
 class DriveStats {
     var driveMillis = 0L
@@ -257,7 +273,7 @@ class Tracker(private val clock: () -> Long) {
     fun recirc(on: Boolean) {
         if (driving && recirc != null && recirc != on && autoRecirc != true) {
             stats.recircToggles++
-            mark(Kind.RECIRC, if (on) "내기 순환" else "외기")
+            mark(Kind.RECIRC, if (on) "내기 순환 켬" else "외기로 바꿈")
         }
         recirc = on; spans()
     }

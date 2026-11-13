@@ -74,8 +74,8 @@ class TimelineView(context: Context, attrs: AttributeSet? = null) : View(context
         val right = width - dp(28f)
         val y = dp(64f)
         fun x(t: Long) = left + (right - left) * (t.coerceIn(0, total).toFloat() / total)
-        label.textSize = sp(20f)
-        strong.textSize = sp(20f)
+        label.textSize = sp(22f) // 6차: 그림 안 글자 22sp
+        strong.textSize = sp(22f)
 
         // 바탕 선: 흐린 파랑 → 파랑
         line.shader = LinearGradient(left, 0f, right, 0f, color(R.color.blue_soft), color(R.color.blue), Shader.TileMode.CLAMP)
@@ -86,11 +86,13 @@ class TimelineView(context: Context, attrs: AttributeSet? = null) : View(context
         // 구간: 굵은 막대와 위쪽 글자
         line.color = color(R.color.blue)
         line.strokeWidth = dp(16f)
-        strong.color = color(R.color.blue)
+        strong.color = color(R.color.blue_text)
         strong.textAlign = Paint.Align.CENTER
         for (m in marks.filter { it.end >= 0 }) {
             c.drawLine(x(m.at), y, maxOf(x(m.end), x(m.at) + dp(4f)), y, line)
-            c.drawText("${m.text} ${(m.end - m.at) / MINUTE}분", (x(m.at) + x(m.end)) / 2, y - dp(24f), strong)
+            val t = "${m.text} ${(m.end - m.at) / MINUTE}분"
+            val half = strong.measureText(t) / 2 // 6차: 22sp라 막대가 끝에 붙으면 글자가 잘린다. 뷰 안으로
+            c.drawText(t, ((x(m.at) + x(m.end)) / 2).coerceIn(half, maxOf(half, width - half)), y - dp(24f), strong)
         }
 
         // 순간: 6개까지는 원·아이콘·글자, 넘으면 눈금과 횟수만
@@ -151,6 +153,8 @@ class CarMapView(context: Context, attrs: AttributeSet? = null) : View(context, 
     private var dim = false
     private var spotlightUntil = 0L // 4차: 새 안내 강조가 끝나는 uptime(research R3)
     var onZone: ((Zone) -> Unit)? = null
+    /** 6차: 세로(1:1) 칸에서는 false. 지도가 작아 이름표를 그리지 않는다(구역 목록이 같은 정보를 보인다) */
+    var labels = true
 
     private val car = context.getDrawable(R.drawable.car_top)!!
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -197,8 +201,8 @@ class CarMapView(context: Context, attrs: AttributeSet? = null) : View(context, 
 
         val t = anim.animatedValue as Float
         val r = 21 * scale
-        label.textSize = sp(18f)
-        strong.textSize = sp(18f)
+        label.textSize = sp(22f) // 6차: 그림 안 글자 22sp
+        strong.textSize = sp(22f)
         val sparkling = sparkle != null && SystemClock.uptimeMillis() < sparkleUntil
         val spot = pulse != null && !dim && SystemClock.uptimeMillis() < spotlightUntil
         val moving = ValueAnimator.areAnimatorsEnabled()
@@ -259,27 +263,28 @@ class CarMapView(context: Context, attrs: AttributeSet? = null) : View(context, 
                 stroke.color = color(R.color.text1); stroke.alpha = 255; stroke.strokeWidth = dp(3f)
                 c.drawCircle(px, py, r + dp(10f), stroke)
             }
-            drawLabel(c, z, s, px, py, r, alpha, if (hot && spot) strong else label)
+            if (labels) drawLabel(c, z, s, px, py, r, alpha, if (hot && spot) strong else label)
         }
     }
 
     /** 구역 이름표: "공조 패널 1/5" */
     private fun drawLabel(c: Canvas, z: Zone, s: Spot, px: Float, py: Float, r: Float, alpha: Int, label: Paint) {
-        val text = "${z.title} ${s.learned}/${s.total}"
+        val text = if (s.total == 0) "${z.title} · 기능 없음" else "${z.title} ${s.learned}/${s.total}" // 6차: "0/0" 대신
         val w = label.measureText(text) + dp(20f)
-        val h = dp(34f)
+        val h = dp(40f)
         val gap = dp(10f)
         val box = when (z.side) {
             Side.RIGHT -> RectF(px + r + gap, py - h / 2, px + r + gap + w, py + h / 2)
             Side.LEFT -> RectF(px - r - gap - w, py - h / 2, px - r - gap, py + h / 2)
             Side.ABOVE -> RectF(px - w / 2, py - r - gap - h, px + w / 2, py - r - gap)
         }
-        box.offset(maxOf(0f, -box.left), 0f) // 화면 밖으로 나가지 않게
+        box.offset(minOf(0f, width - box.right), 0f) // 화면 밖으로 나가지 않게(6차: 오른쪽도). 오른쪽 먼저, 그다음 왼쪽(글자 시작이 보이게)
+        box.offset(maxOf(0f, -box.left), 0f)
         fill.color = color(R.color.card); fill.alpha = alpha
         c.drawRoundRect(box, h / 2, h / 2, fill)
         stroke.color = color(if (z == pulse && !dim) R.color.blue else R.color.line); stroke.alpha = alpha; stroke.strokeWidth = dp(1.5f)
         c.drawRoundRect(box, h / 2, h / 2, stroke)
-        label.color = color(if (z == pulse && !dim) R.color.blue else R.color.text2); label.alpha = alpha
+        label.color = color(if (z == pulse && !dim) R.color.blue_text else R.color.text2); label.alpha = alpha
         label.textAlign = Paint.Align.CENTER
         c.drawText(text, box.centerX(), box.centerY() - (label.descent() + label.ascent()) / 2, label)
     }

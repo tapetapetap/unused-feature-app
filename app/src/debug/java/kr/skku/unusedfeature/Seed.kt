@@ -26,7 +26,7 @@ object Seed {
             listOf(Mark(Kind.HIGHWAY, min(12), min(23), "시속 70km 이상"))),
         Item(Feature.SEAT_HEAT, 2, 18, 9, { maxSetTemp = 27f }, listOf(point(Kind.HEAT, 1, "난방 27°"))),
         Item(Feature.FRONT_DEFROST, 1, 9, 18, { rainRecircMillis = min(8) },
-            listOf(Mark(Kind.RAIN, min(3), min(15), "와이퍼"), point(Kind.RECIRC, 4, "내기 순환"))),
+            listOf(Mark(Kind.RAIN, min(3), min(15), "와이퍼"), point(Kind.RECIRC, 4, "내기 순환 켬"))),
         Item(Feature.AMBIENT, 1, 18, 16, { nightMillis = min(12) }, listOf(Mark(Kind.NIGHT, min(2), min(14), "전조등"))),
     )
 
