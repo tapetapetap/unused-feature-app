@@ -70,12 +70,12 @@ T018(Screens.kt)과 T019(Feature.kt·Coach.kt·Seed.kt)는 서로 다른 파일�
 
 - [X] T021 빌드·테스트·설치(quickstart §1). 기존 테스트 전부와 `evidenceCountRules` 통과
 - [X] T022 에뮬레이터 확인 quickstart §2~5(§2의 4 글자 크기 코드 검사, §3의 5-1 칩 격자 포함). 캡처를 `/Users/jiwon/Desktop/현대자동차 공모전/화면 점검 1113/고친 뒤/안 써본 기능/`에 두고, `specs/006-car-screen/verification.md`를 만들어 UI 덤프 크기·간격표를 적는다
-- [ ] T023 장면 회귀(quickstart §6): `climate`, `wiper`, `rain`, `highway`, `heat`, `multi`, `live`가 5차 verification과 같은 안내를 고른다
+- [X] T023 장면 회귀(quickstart §6): `climate`, `wiper`, `rain`, `highway`, `heat`, `multi`, `live`가 5차 verification과 같은 안내를 고른다
 - [X] T024 `/impeccable audit`와 `/impeccable critique`를 다시 돌려 점수와 남은 문제를 verification.md에 적고, 남은 P1이 있으면 `/impeccable polish`로 다듬는다(contracts 범위 안)
 - [X] T025 ponytail-review(diff `git diff backup/before-car-unused -- app`)를 돌려 줄일 것을 반영한다
 - [X] T026 `/code-review`(high)를 돌려 정확성 문제를 반영하고, 보안 직접 점검(새 권한·외부 전송·로그에 개인 정보가 없는지)을 verification.md에 적는다
 - [X] T027 `specs/006-car-screen/verification.md`(T022에서 만든 파일)를 마저 채운다: SC-001~006 결과, 캡처 경로, 점수 전후, 리뷰 반영
-- [ ] T028 로컬 커밋(브랜치 `car-unused`, 푸시하지 않음). main에 합치기와 푸시는 사용자가 정한다
+- [X] T028 로컬 커밋(브랜치 `car-unused`, 푸시하지 않음). main에 합치기와 푸시는 사용자가 정한다
 
 ## Dependencies & Execution Order
 
