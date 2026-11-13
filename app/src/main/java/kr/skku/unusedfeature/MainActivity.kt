@@ -25,20 +25,29 @@ class MainActivity : Activity() {
     private var shown: State? = null
     private var drivingKey: String? = null // 5차: 주행 중 화면은 이 값이 바뀔 때만 다시 그린다(contracts §2)
     private var drivesSeen = -1
+    private var restoreY = -1 // 6차: 낮·밤 전환 뒤 첫 그리기에서 돌아갈 스크롤(contracts §5)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         progress = Progress(this)
         ui = Ui(this)
+        // 6차: 낮·밤 전환처럼 다시 만들어질 때 열어 둔 칸을 되살린다. 운전이 시작됐으면 render가 닫는다
+        savedInstanceState?.let { b ->
+            openZone = b.getString("zone")?.let { runCatching { Zone.valueOf(it) }.getOrNull() }
+            openHistory = if (b.containsKey("history")) b.getInt("history") else null
+            listY = b.getInt("listY"); restoreY = b.getInt("scrollY", -1); drivesSeen = b.getInt("drivesSeen", -1)
+        }
         findViewById<View>(R.id.mapPane).background = GradientDrawable(
             GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(getColor(R.color.map_top), getColor(R.color.map_bottom)),
         )
-        findViewById<CarMapView>(R.id.map).onZone = ::toggleZone
+        // 6차 사용자 결정: 세로(1:1) 칸의 차 지도는 그림으로만(이름표 없음, 누르기 없음). 구역은 옆 목록 줄(76dp)로 연다
+        val portrait = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+        findViewById<CarMapView>(R.id.map).apply { labels = !portrait; onZone = if (portrait) null else ::toggleZone }
         findViewById<TextView>(R.id.historyButton).apply {
-            setTextColor(getColor(R.color.blue))
+            setTextColor(getColor(R.color.blue_text))
             background = ui.round(getColor(R.color.blue_soft), 100f)
-            setPadding(ui.px(18), ui.px(9), ui.px(20), ui.px(9))
+            setPadding(ui.px(24), 0, ui.px(24), 0)
             setOnClickListener {
                 if (WatchService.driving) return@setOnClickListener // 구역 점과 같은 규칙(FR-007). 비활성 처리와 함께 둔다
                 openHistory = -1; openZone = null; render() // 늘 목록으로, 닫기는 "✕ 닫기"(FR-006)
@@ -64,12 +73,31 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         WatchService.onUpdate = null
-        // 가려지는 동안 운전이 있었을 수 있다(1분 미만이면 운전 횟수도 그대로). 돌아오면 상황 화면부터(US3-3)
-        openZone = null; openHistory = null
+        // 가려지는 동안 운전이 있었을 수 있다(1분 미만이면 운전 횟수도 그대로). 돌아오면 상황 화면부터(US3-3).
+        // 6차: 낮·밤 전환처럼 다시 만들어지는 중이면 닫지 않고 onSaveInstanceState로 넘긴다
+        if (!isChangingConfigurations) { openZone = null; openHistory = null }
         super.onPause()
     }
 
-    private fun legend(color: Int, label: String) = ui.row(10, ui.dot(color, 14), ui.text(label, 20f, R.color.text3)).apply {
+    override fun onSaveInstanceState(out: Bundle) {
+        super.onSaveInstanceState(out)
+        openZone?.let { out.putString("zone", it.name) }
+        openHistory?.let { out.putInt("history", it) }
+        out.putInt("listY", listY); out.putInt("scrollY", findViewById<ScrollView>(R.id.scroll).scrollY); out.putInt("drivesSeen", drivesSeen)
+    }
+
+    /** 6차 뒤로 버튼: 다시 보기 → 기록 목록 → 닫기 → 앱 나가기, 구역 카드 → 닫기 */
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        val h = openHistory
+        when {
+            h != null && h >= 0 -> { openHistory = -1; render() }
+            h != null || openZone != null -> { openHistory = null; openZone = null; render() }
+            else -> super.onBackPressed()
+        }
+    }
+
+    private fun legend(color: Int, label: String) = ui.row(10, ui.dot(color, 14), ui.text(label, 24f, R.color.text3)).apply {
         setPadding(ui.px(14), 0, ui.px(14), 0)
     }
 
@@ -138,7 +166,9 @@ class MainActivity : Activity() {
         }, lp())
         // 다른 화면으로 바뀔 때만 맨 위로. 다시 보기에서 목록으로 돌아오면 보던 자리로, 같은 화면을 다시 그리면 그대로
         val scroll = findViewById<ScrollView>(R.id.scroll)
-        if (state == State.HISTORY && prev == State.RECORD) scroll.post { scroll.scrollTo(0, listY) }
+        val y = restoreY.also { restoreY = -1 } // 6차: 다시 만들어진 뒤 첫 그리기는 그 스크롤로(주행 중 화면은 맨 위)
+        if (y >= 0 && state != State.DRIVING) scroll.post { scroll.scrollTo(0, y) }
+        else if (state == State.HISTORY && prev == State.RECORD) scroll.post { scroll.scrollTo(0, listY) }
         else if (state != prev) scroll.scrollTo(0, 0)
 
         val spots = Zone.entries.associateWith { z ->
@@ -164,13 +194,13 @@ class MainActivity : Activity() {
         }
         findViewById<LinearLayout?>(R.id.zoneList)?.let { list -> // 세로 화면만
             list.removeAllViews()
-            Zone.entries.forEach { z -> list.addView(zoneRow(z, spots.getValue(z), z == pulse, state == State.DRIVING), lp(bottom = 12)) }
+            Zone.entries.forEach { z -> list.addView(zoneRow(z, spots.getValue(z), z == pulse, state == State.DRIVING), lp(bottom = 24)) } // 6차: 누르는 줄 사이 24dp
         }
     }
 
     /** 추천 기록 다시 보기(003): 그때 안내 화면 그대로, 제목만 그때 시각 */
     private fun recordScreen(r: Record, learned: Set<Feature>): View {
-        val back = ui.chip("←  추천 기록", R.color.text2, R.color.chip).apply { setOnClickListener { openHistory = -1; render() } }
+        val back = ui.action("←  추천 기록", R.color.text2, R.color.chip) { openHistory = -1; render() }
         val used = progress.learnedAt(r.pick).takeIf { r.pick in learned }
             ?.let { ui.chip(if (it > 0) "써 봄 ✓ ${day(it)}" else "써 봄 ✓", R.color.green_text, R.color.green_soft) }
         return ui.tip(r.pick, r.reason, r.marks, r.driveMs, ui.row(12, *listOfNotNull(back, used).toTypedArray()),
@@ -195,9 +225,11 @@ class MainActivity : Activity() {
     private fun zoneRow(z: Zone, s: CarMapView.Spot, hot: Boolean, driving: Boolean): View {
         val done = s.total > 0 && s.learned == s.total
         val tint = getColor(if (hot) R.color.blue else if (done) R.color.green else R.color.text3)
-        return ui.row(16, ui.icon(z.icon, tint, 34), ui.text(z.title, 24f, R.color.text1, 600), ui.text("${s.learned}/${s.total}", 22f, R.color.text3), grow = 1).apply {
+        val count = if (s.total == 0) "기능 없음" else "${s.learned}/${s.total}" // 6차: "0/0"은 고장처럼 보인다
+        return ui.row(16, ui.icon(z.icon, tint, 34), ui.text(z.title, 24f, R.color.text1, 600), ui.text(count, 24f, R.color.text3), grow = 1).apply {
             background = ui.round(getColor(R.color.card), 18f, getColor(if (hot) R.color.blue else R.color.line))
             setPadding(ui.px(20), ui.px(16), ui.px(22), ui.px(16))
+            minimumHeight = ui.px(76)
             if (driving) alpha = 0.4f else setOnClickListener { toggleZone(z) }
         }
     }

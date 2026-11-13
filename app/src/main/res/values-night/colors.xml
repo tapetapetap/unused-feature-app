@@ -14,6 +14,7 @@
     <color name="blue">#FF0082FF</color>
     <color name="blue_dark">#FF0068E0</color>
     <color name="blue_soft">#FF13284A</color>
+    <color name="blue_text">#FF6CB4FF</color> <!-- 6차: 연한 파랑 바탕·카드 위 파랑 글자 -->
     <color name="green">#FF00E074</color>
     <color name="green_dark">#FF00B35C</color>
     <color name="green_text">#FF00E074</color>

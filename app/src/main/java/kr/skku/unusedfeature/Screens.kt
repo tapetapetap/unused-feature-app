@@ -65,7 +65,7 @@ class Ui(val ctx: Context) {
         setLineSpacing(0f, 1.18f)
     }
 
-    fun small(s: String) = text(s, 22f, R.color.text3, 600)
+    fun small(s: String) = text(s, 24f, R.color.text3, 600)
     fun headline(s: String, sp: Float = 48f) = text(s, sp, R.color.text1, 700)
     fun body(s: String, sp: Float = 26f) = text(s, sp, R.color.text2)
 
@@ -134,16 +134,25 @@ class Ui(val ctx: Context) {
         layoutParams = LinearLayout.LayoutParams(px(size), px(size))
     }
 
-    fun chip(label: String, fg: Int, bg: Int, iconRes: Int = 0) = text(label, 20f, fg, 600).apply {
-        background = round(c(bg), 100f)
-        setPadding(px(18), px(9), px(20), px(9))
+    /** 상태 칩(누르지 않음). 6차: 차 기준 24sp */
+    fun chip(label: String, fg: Int, bg: Int, iconRes: Int = 0, line: Int = 0) = text(label, 24f, fg, 600).apply {
+        background = round(c(bg), 100f, if (line != 0) c(line) else 0)
+        setPadding(px(20), px(10), px(22), px(10))
         if (iconRes != 0) {
             val d = ctx.getDrawable(iconRes)!!.mutate()
             d.setTint(c(fg))
-            d.setBounds(0, 0, px(22), px(22))
+            d.setBounds(0, 0, px(26), px(26))
             setCompoundDrawablesRelative(d, null, null, null)
             compoundDrawablePadding = px(8)
         }
+    }
+
+    /** 누르는 칩(6차): 칩 모양에 차 기준 누르는 칸 76dp 이상, 글자 가운데 */
+    fun action(label: String, fg: Int, bg: Int, onClick: () -> Unit) = chip(label, fg, bg).apply {
+        minHeight = px(76); minWidth = px(76)
+        gravity = Gravity.CENTER
+        setPadding(px(28), 0, px(28), 0)
+        setOnClickListener { onClick() }
     }
 
     /** 천천히 깜빡이기. 화면에서 빠지면 멈춘다 */
@@ -163,7 +172,7 @@ class Ui(val ctx: Context) {
     fun where(w: Where, blink: Boolean = true): View {
         val buttons = w.buttons.mapIndexed { i, b ->
             val hot = i == w.hi
-            text(b, if (hot) 22f else 19f, if (hot) R.color.on_accent else R.color.panel_text, if (hot) 700 else 400).apply {
+            text(b, if (hot) 24f else 22f, if (hot) R.color.on_accent else R.color.panel_text, if (hot) 700 else 400).apply {
                 if (hot && blink) pulse(this)
                 background = if (hot) round(c(R.color.blue), 12f) else round(c(R.color.panel), 12f, c(R.color.panel_line))
                 setPadding(px(18), px(12), px(18), px(12))
@@ -179,25 +188,25 @@ class Ui(val ctx: Context) {
     fun hero(tile: View, title: String, sub: String?) =
         row(36, tile, column(14, headline(title), *listOfNotNull(sub?.let { body(it) }).toTypedArray()), grow = 1)
 
-    fun banner(text: String) = row(14, dot(R.color.red), text(text, 22f, R.color.red_text, 600), grow = 1).apply {
+    fun banner(text: String) = row(14, dot(R.color.red), text(text, 24f, R.color.red_text, 600), grow = 1).apply {
         background = round(c(R.color.red_soft), 18f, c(R.color.red))
         setPadding(px(24), px(18), px(24), px(18))
     }
 
-    fun cardTitle(title: String, right: String = "") = row(12, text(title, 26f, R.color.text1, 600), text(right, 22f, R.color.text3), grow = 0)
+    fun cardTitle(title: String, right: String = "") = row(12, text(title, 28f, R.color.text1, 600), text(right, 24f, R.color.text3), grow = 0)
 
     fun recent(driveMs: Long) = small("방금 끝난 운전 · ${driveMs / MINUTE}분")
 }
 
 /** 1. 첫 실행 */
 fun Ui.firstRun(): View {
-    fun step(n: Int, color: Int, title: String, sub: String) = row(24,
-        text("$n", 24f, R.color.on_accent, 700).apply {
+    fun step(n: Int, bg: Int, fg: Int, title: String, sub: String) = row(24,
+        text("$n", 24f, fg, 700).apply {
             gravity = Gravity.CENTER
-            background = round(c(color), 100f)
+            background = round(c(bg), 100f)
             layoutParams = LinearLayout.LayoutParams(px(52), px(52))
         },
-        column(4, text(title, 28f, R.color.text1, 600), text(sub, 22f, R.color.text3)), grow = 1,
+        column(4, text(title, 28f, R.color.text1, 600), text(sub, 24f, R.color.text3)), grow = 1,
     ).apply {
         background = round(c(R.color.card), 22f, c(R.color.line))
         setPadding(px(28), px(24), px(28), px(24))
@@ -205,9 +214,9 @@ fun Ui.firstRun(): View {
     return column(28,
         small("안 써본 기능"),
         hero(tile(R.drawable.ic_spark, Tile.VIOLET), "운전을 마치면\n놓친 기능 하나를\n알려 드려요", null),
-        step(1, R.color.blue, "평소처럼 운전하세요", "주행 중에는 꼭 필요할 때만 짧게 알려요"),
-        step(2, R.color.blue, "P에 놓으면 딱 한 가지", "이번 운전에서 쓸 만했던 기능을 음성과 화면으로"),
-        step(3, R.color.green, "써 보면 지도에 초록불", "익힌 기능은 다시 알려 드리지 않아요"),
+        step(1, R.color.blue, R.color.on_accent, "평소처럼 운전하세요", "주행 중에는 꼭 필요할 때만 짧게 알려요"),
+        step(2, R.color.blue, R.color.on_accent, "P에 놓으면 딱 한 가지", "이번 운전에서 쓸 만했던 기능을 음성과 화면으로"),
+        step(3, R.color.green_soft, R.color.green_text, "써 보면 지도에 초록불", "익힌 기능은 다시 알려 드리지 않아요"), // 6차: 흰 글자/초록은 2.4:1
     )
 }
 
@@ -222,8 +231,8 @@ fun Ui.driving(recording: Boolean, live: Pair<Feature, Boolean>?, compact: Boole
         live == null -> listOf(
             row(0, tile(R.drawable.ic_z_wheel, Tile.SOFT, size)),
             headline("운전 중이에요", 60f),
-            body(if (recording) "쓸 만한 기능이 생기면 한 번 알려 드릴게요." else "이번 운전은 기록하지 않아요. 다음 운전부터 지켜볼게요.", 30f),
-            row(14, dot(R.color.green, 14), text("주행 중에는 한 운전에 두 번까지만, 짧게 알려요", 22f, R.color.text3)).apply {
+            body(if (recording) "쓸 만한 기능이 생기면 짧게 알려 드릴게요." else "이번 운전은 기록하지 않아요. 다음 운전부터 지켜볼게요.", 30f),
+            row(14, dot(R.color.green, 14), text("한 운전에 두 번까지만 알려요", 24f, R.color.text3)).apply {
                 background = round(c(R.color.card), 18f, c(R.color.line))
                 setPadding(px(24), px(18), px(28), px(18))
             }.let { row(0, it) },
@@ -246,10 +255,8 @@ fun Ui.tip(f: Feature, reason: String, marks: List<Mark>, driveMs: Long, banner:
     parts += hero(tile(f.icon, Tile.BLUE), "다음엔 ${obj(f.title)}\n$verb 보세요", reason)
     parts += caption // 4차: 들은 음성 자막
     if (marks.isNotEmpty()) {
-        val points = marks.count { it.end < 0 }
-        val minutes = marks.filter { it.end >= 0 }.sumOf { it.end - it.at } / MINUTE
         parts += card(
-            cardTitle("이번 운전에서 · ${f.evidenceTitle}", if (points > 0) "${points}번" else "${minutes}분"),
+            cardTitle("이번 운전에서 · ${f.evidenceTitle}", evidenceCount(marks, f.evidence)),
             TimelineView(ctx).apply { set(marks, driveMs) },
         )
     }
@@ -263,7 +270,7 @@ fun Ui.tip(f: Feature, reason: String, marks: List<Mark>, driveMs: Long, banner:
  */
 fun Ui.caption(f: Feature, title: String, until: Long): View = row(18,
     row(8, icon(R.drawable.ic_speaker, c(R.color.blue), 28), SoundBars(ctx, until)),
-    column(6, text(title, 20f, R.color.text3, 600), text(f.speech, 24f, R.color.text1)), grow = 1).apply {
+    column(6, text(title, 24f, R.color.text3, 600), text(f.speech, 24f, R.color.text1)), grow = 1).apply {
     background = round(c(R.color.card), 18f, c(R.color.line))
     setPadding(px(24), px(18), px(24), px(18))
 }
@@ -273,9 +280,9 @@ fun Ui.whereCard(f: Feature): View = card(
     cardTitle("여기를 누르세요"),
     row(28, where(f.where), column(6,
         text("${f.where.place} · ${f.where.buttons[f.where.hi]}", 24f, R.color.text1, 600),
-        text(f.whenText, 22f, R.color.text3),
+        text(f.whenText, 24f, R.color.text3),
     ), grow = 1),
-    text("버튼 위치는 차종마다 조금 다를 수 있어요.", 20f, R.color.text4),
+    text("버튼 위치는 차종마다 조금 다를 수 있어요.", 24f, R.color.text3),
 )
 
 /** 새 안내 위에 붙는 초록 띠 */
@@ -298,16 +305,16 @@ fun Ui.confirm(f: Feature, driveMs: Long, learned: List<Feature>, total: Int, at
         }
     }
     val chips = learned.map {
-        if (it == f) chip("${it.title} · 새로", R.color.on_accent, R.color.green, it.icon)
+        if (it == f) chip("${it.title} · 새로", R.color.green_text, R.color.green_soft, it.icon, line = R.color.green) // 6차: 흰 글자/초록은 2.4:1
         else chip(it.title, R.color.green_text, R.color.green_soft, it.icon)
     }
     return column(28,
         recent(driveMs),
         hero(tile(f.icon, Tile.GREEN, badge = true), "${f.title},\n써 보셨네요!", "이제 다시 알려 드리지 않아요."),
-        card(cardTitle("도감", "${learned.size} / $total 익힘"), bar, grid(3, chips)),
+        card(cardTitle("도감", "${learned.size} / $total 익힘"), bar, grid(2, chips)), // 6차: 24sp 칩은 3열이면 카드를 넘는다
         card(row(20, tile(R.drawable.ic_clock, Tile.SOFT, 64), column(4,
-            text("처음 쓴 순간", 26f, R.color.text1, 600),
-            text(if (at > 0) "${moment(at)} · $note" else note, 22f, R.color.text3),
+            text("처음 쓴 순간", 28f, R.color.text1, 600),
+            text(if (at > 0) "${moment(at)} · $note" else note, 24f, R.color.text3),
         ), grow = 1)),
     )
 }
@@ -320,9 +327,9 @@ fun Ui.none(driveMs: Long, used: List<Feature>, remaining: List<Feature>): View 
         recent(driveMs),
         hero(tile(R.drawable.ic_ok, Tile.GREY), "이번 운전에선\n권할 기능이 없었어요", "다음 운전도 지켜볼게요."),
         card(cardTitle("이번 운전에서 쓴 기능"),
-            if (used.isEmpty()) body("없어요", 24f) else grid(3, used.map { chip(it.title, R.color.green_text, R.color.green_soft, it.icon) })),
-        card(cardTitle("아직 남은 기능 ${remaining.size}개"), grid(3, left),
-            text("쓸 만한 순간이 오면 운전 중엔 짧게, 끝나면 자세히 알려 드릴게요.", 22f, R.color.text3)),
+            if (used.isEmpty()) body("없어요", 24f) else grid(2, used.map { chip(it.title, R.color.green_text, R.color.green_soft, it.icon) })),
+        card(cardTitle("아직 남은 기능 ${remaining.size}개"), grid(2, left),
+            text("쓸 만한 순간이 오면 운전 중엔 짧게, 끝나면 자세히 알려 드릴게요.", 24f, R.color.text3)),
     )
 }
 
@@ -331,8 +338,8 @@ fun Ui.complete(features: List<Feature>, learnedAt: (Feature) -> Long, firstDriv
     val ring = RingView(ctx).apply { set(features.size, features.size); layoutParams = LinearLayout.LayoutParams(px(176), px(176)) }
     val cells = features.map { f ->
         row(14, tile(f.icon, Tile.GREEN, 56), column(2,
-            text(f.title, 22f, R.color.text1, 600),
-            text(learnedAt(f).takeIf { it > 0 }?.let(::day) ?: "익힘", 20f, R.color.text3),
+            text(f.title, 24f, R.color.text1, 600),
+            text(learnedAt(f).takeIf { it > 0 }?.let(::day) ?: "익힘", 24f, R.color.text3),
         )).apply {
             background = round(c(R.color.card), 18f, c(R.color.line))
             setPadding(px(16), px(14), px(22), px(14))
@@ -341,14 +348,14 @@ fun Ui.complete(features: List<Feature>, learnedAt: (Feature) -> Long, firstDriv
     return column(28,
         small("도감 완성"),
         hero(ring, "내 차 기능 ${features.size}개를\n모두 익혔어요", "${day(firstDrive)}부터 운전 ${drives}번 만이에요."),
-        grid(3, cells, even = true),
+        grid(2, cells, even = true),
     )
 }
 
 /** 8. 추천 기록 목록(003): 날짜별, 최신이 위. 항목을 누르면 [onOpen](그 번호) */
 fun Ui.history(records: List<Record>, learned: Set<Feature>, unsupported: Set<Feature>, onOpen: (Int) -> Unit, onClose: () -> Unit): View {
-    val close = chip("✕  닫기", R.color.text2, R.color.chip).apply { setOnClickListener { onClose() } }
-    val head = row(20, column(6, small("지난 안내"), headline("추천 기록", 44f)), close, grow = 0)
+    val close = action("✕  닫기", R.color.text2, R.color.chip, onClose)
+    val head = row(24, column(6, small("지난 안내"), headline("추천 기록", 44f)), close, grow = 0)
     if (records.isEmpty()) return column(28, head, hero(tile(R.drawable.ic_clock, Tile.GREY),
         "아직 추천받은 기능이 없어요", "운전이 끝나 P에 놓으면 기능 하나를 알려 드리고, 여기에 남겨요."))
     val labels = records.map { dayLabel(it.at) }
@@ -358,7 +365,7 @@ fun Ui.history(records: List<Record>, learned: Set<Feature>, unsupported: Set<Fe
         val used = r.pick in learned
         val top = listOfNotNull(
             text(r.pick.title, 30f, R.color.text1, 700),
-            text(timeOfDay(r.at), 22f, R.color.text3),
+            text(timeOfDay(r.at), 24f, R.color.text3),
             chip("써 봄 ✓", R.color.green_text, R.color.green_soft).takeIf { used },
         )
         // 4차 미니 지도: 익힘 > 이 차에 없음 > 아직(카드의 타일·"써 봄 ✓"과 같은 규칙)
@@ -367,16 +374,16 @@ fun Ui.history(records: List<Record>, learned: Set<Feature>, unsupported: Set<Fe
             column(8, row(12, *top.toTypedArray()), body(r.reason, 24f)), ZoneThumb(ctx, r.pick.zone, state), grow = 1))
             .apply { setOnClickListener { onOpen(i) } }
     }
-    return column(20, *parts.toTypedArray())
+    return column(24, *parts.toTypedArray()) // 6차: 누르는 카드 사이 24dp
 }
 
 /** 7. 구역 카드: 그 구역 기능들의 상태·언제·누를 곳 */
 fun Ui.zone(z: Zone, rows: List<ZoneRow>, done: Int, total: Int, onClose: () -> Unit): View {
-    val close = chip("✕  닫기", R.color.text2, R.color.chip).apply { setOnClickListener { onClose() } }
+    val close = action("✕  닫기", R.color.text2, R.color.chip, onClose)
     val cards = rows.map { r ->
         val (style, fg, bg) = when (r.state) {
             RowState.LEARNED -> Triple(Tile.GREEN, R.color.green_text, R.color.green_soft)
-            RowState.SHOWN -> Triple(Tile.BLUE, R.color.blue, R.color.blue_soft)
+            RowState.SHOWN -> Triple(Tile.BLUE, R.color.blue_text, R.color.blue_soft)
             else -> Triple(Tile.GREY, R.color.text3, R.color.chip)
         }
         card(
@@ -384,14 +391,15 @@ fun Ui.zone(z: Zone, rows: List<ZoneRow>, done: Int, total: Int, onClose: () -> 
                 text(r.feature.title, 30f, R.color.text1, 700),
                 row(0, chip(r.label, fg, bg)),
             ), grow = 1),
-            text("언제 쓰면 좋아요", 22f, R.color.text3, 600),
+            text("언제 쓰면 좋아요", 24f, R.color.text3, 600),
             body(r.feature.whenText, 24f),
             row(0, where(r.feature.where)),
         ).apply { if (r.state == RowState.MISSING) alpha = 0.5f }
     }
     return column(24,
-        row(20, column(6, small("내 차 지도"), headline(z.title, 44f), body("$done / $total 익힘", 24f)), close, grow = 0),
+        row(24, column(6, small("내 차 지도"), headline(z.title, 44f),
+            body(if (total == 0) "이 차에서는 쓸 수 있는 기능이 없어요" else "$done / $total 익힘", 24f)), close, grow = 0),
         *cards.toTypedArray(),
-        text("버튼 위치는 차종마다 조금 다를 수 있어요.", 20f, R.color.text4),
+        text("버튼 위치는 차종마다 조금 다를 수 있어요.", 24f, R.color.text3),
     )
 }

@@ -33,7 +33,7 @@
             android:layout_marginTop="2dp"
             android:fontFamily="sans-serif"
             android:textColor="@color/text3"
-            android:textSize="22sp" />
+            android:textSize="24sp" />
 
         <!-- 추천 기록 버튼(003): 가로·세로 모두 셋째 줄. 색·바탕·글자는 MainActivity -->
         <TextView
@@ -42,7 +42,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:fontFamily="sans-serif"
+            android:gravity="center"
+            android:minWidth="76dp"
+            android:minHeight="76dp"
             android:textFontWeight="600"
-            android:textSize="22sp" />
+            android:textSize="24sp" />
     </LinearLayout>
 </LinearLayout>
