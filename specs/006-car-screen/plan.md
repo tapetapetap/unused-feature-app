@@ -15,7 +15,7 @@
 | "추천 기록 n ›" 76dp, `mapSub` 24sp | `map_head.xml`, `MainActivity.kt` | FR-001·003 |
 | 세로 구역 줄 76dp, 범례 24sp | `MainActivity.kt` | FR-001·003 |
 | 차 지도 이름표 22sp, 타임라인 글자 22sp, 그림 안 파랑 글자 → `blue_text` | `Views.kt` | FR-002·005 |
-| 누를 곳 버튼 그림 22/24sp | `Screens.kt`(`where`) | FR-002 |
+| 누를 곳 버튼 그림 24sp | `Screens.kt`(`where`) | FR-002 |
 | `text3` 낮 #62656D, 새 `blue_text`, `green_text` 낮 #017A40 | `values/colors.xml`, `values-night/colors.xml` | FR-005 |
 | 각주 `text4` → `text3`, 연한 바탕 위 초록·파랑 글자 → `green_text`·`blue_text` | `Screens.kt`, `MainActivity.kt` | FR-005 |
 | 뒤로 버튼 | `MainActivity.onBackPressed` | FR-006 |

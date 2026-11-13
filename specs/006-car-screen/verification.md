@@ -21,7 +21,7 @@ UI 덤프(`clickable="true"`, 1dp = 1px):
 | 세로 1:1 칸 | 구역 줄 5개 | 383×76, 줄 사이 24 |
 
 - 76 미만은 화면 아래에 걸려 잘린 기록 카드(939×45, 보이는 부분)뿐이다.
-- 코드 검사: Screens.kt·MainActivity.kt의 글자 크기 중 24sp 미만은 누를 곳 그림(`where`)의 22sp뿐이다. Views.kt 그림 안 글자는 22sp(이름표·타임라인), 진행 원 숫자는 약 20sp(그대로).
+- 코드 검사: Screens.kt·MainActivity.kt에 24sp 미만 글자가 없다(누를 곳 그림 `where`의 나머지 버튼은 PR 리뷰 뒤 22 → 24sp). Views.kt 그림 안 글자는 22sp(이름표·타임라인), 진행 원 숫자는 약 20sp(그대로).
 - 대비: research R5 표대로. 낮·밤 캡처에서 각주(text3), "안내함 n회"(blue_text), 새로 익힌 칩(green_text + 테두리)을 확인했다.
 
 ## 세로 1:1 칸과 주행 중 카드 (spec US1-6, research R4)

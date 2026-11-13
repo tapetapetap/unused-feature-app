@@ -172,7 +172,7 @@ class Ui(val ctx: Context) {
     fun where(w: Where, blink: Boolean = true): View {
         val buttons = w.buttons.mapIndexed { i, b ->
             val hot = i == w.hi
-            text(b, if (hot) 24f else 22f, if (hot) R.color.on_accent else R.color.panel_text, if (hot) 700 else 400).apply {
+            text(b, 24f, if (hot) R.color.on_accent else R.color.panel_text, if (hot) 700 else 400).apply {
                 if (hot && blink) pulse(this)
                 background = if (hot) round(c(R.color.blue), 12f) else round(c(R.color.panel), 12f, c(R.color.panel_line))
                 setPadding(px(18), px(12), px(18), px(12))
