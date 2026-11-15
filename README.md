@@ -10,7 +10,7 @@
 | 실행 방법 | [2. 실행 방법](#2-실행-방법) |
 | 테스트 환경과 필요한 설정 | [3. 테스트 환경과 필요한 설정](#3-테스트-환경과-필요한-설정) |
 | 개발에 사용한 에뮬레이터 버전과 화면 규격 | Pleos Connect v2.1.0(Android 14, API 34) · 가로 2560×1440, 160dpi |
-| APK 파일 위치 | [`apk/성솦현차해적단_안써본기능_release.apk`](apk/성솦현차해적단_안써본기능_release.apk) |
+| APK 파일 위치 | [`apk/김김서김김_안써본기능_release.apk`](apk/김김서김김_안써본기능_release.apk) |
 
 처음 쓰는 분은 [사용설명서](사용설명서.md)를 먼저 보세요.
 
@@ -66,7 +66,7 @@ adb forward tcp:8088 tcp:8088           # Virtual Console. 부팅마다 한 번
 
 ```bash
 adb uninstall kr.skku.unusedfeature     # 디버그 빌드를 깐 적이 있을 때만(서명이 달라 덮어쓸 수 없습니다)
-adb install -r -g apk/성솦현차해적단_안써본기능_release.apk
+adb install -r -g apk/김김서김김_안써본기능_release.apk
 adb shell am start --user 10 -n kr.skku.unusedfeature/.MainActivity   # 앱 목록에서 눌러도 됩니다
 ```
 
@@ -148,7 +148,7 @@ scripts/demo.sh live       # 화면을 1:1로 나눈 내비 옆 칸, 주행 중 
 
 | 빌드 | 위치 | 쓰임 |
 |---|---|---|
-| release | [`apk/성솦현차해적단_안써본기능_release.apk`](apk/성솦현차해적단_안써본기능_release.apk) | 설치해서 직접 써 보기(2-2). 실제 시간을 씁니다 |
+| release | [`apk/김김서김김_안써본기능_release.apk`](apk/김김서김김_안써본기능_release.apk) | 설치해서 직접 써 보기(2-2). 실제 시간을 씁니다 |
 | debug | `app/build/outputs/apk/debug/app-debug.apk`(빌드하면 생기고, 저장소에는 없습니다) | 시연 스크립트(2-3) |
 
 - release APK는 팀 서명 키(저장소 밖에 보관)로 서명했습니다. 소스에서 `./gradlew :app:assembleRelease`로 만들면 서명 안 된 APK가 나오므로, 직접 만든 release를 설치하려면 각자 키로 서명(`apksigner sign`)해야 합니다.
